@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="description" content="Kalkulator investasi yang menghitung nilai skema return harian sekaligus menguji apakah janjinya masuk akal.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reality Check">
+<title>Reality Check — Kalkulator Investasi</title>
+<style>
+:root{
+  color-scheme: dark;
+  --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-7:#9085e9;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --seq-100:#cde2fb; --seq-450:#2a78d6;
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f0efec;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a; --series-7:#4a3aa7;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--page); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.5;
+  padding-bottom:calc(72px + env(safe-area-inset-bottom));
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:40;background:var(--page);
+  border-bottom:1px solid var(--border);
+  padding:calc(12px + env(safe-area-inset-top)) 0 12px;
+}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:32px;height:32px;border-radius:9px;background:var(--critical);
+  display:grid;place-items:center;flex:none;font-weight:700;color:#fff;font-size:17px}
+.brand h1{font-size:15px;margin:0;font-weight:650;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand p{font-size:11.5px;margin:0;color:var(--muted)}
+.iconbtn{background:var(--surface-2);border:1px solid var(--border);color:var(--ink-2);
+  width:36px;height:36px;border-radius:10px;font-size:15px;cursor:pointer;flex:none}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
+.card.flat{background:transparent;border:none;padding:0}
+.card h2{font-size:13px;margin:0 0 2px;font-weight:650;letter-spacing:.02em;text-transform:uppercase;color:var(--muted)}
+.card h3{font-size:15.5px;margin:0 0 10px;font-weight:650;letter-spacing:-.01em}
+.sub{font-size:12.5px;color:var(--muted);margin:0 0 14px;line-height:1.45}
+
+/* ---------- inputs ---------- */
+label.lb{display:block;font-size:12.5px;color:var(--ink-2);font-weight:550;margin:0 0 7px}
+.moneywrap{position:relative;display:flex;align-items:center;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.moneywrap .pfx{padding:0 4px 0 14px;color:var(--muted);font-size:17px;font-weight:600;flex:none}
+input[type=text]{
+  flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--ink);
+  font-size:21px;font-weight:650;padding:13px 14px 13px 4px;font-variant-numeric:tabular-nums;
+}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.chip{background:var(--surface-2);border:1px solid var(--border);color:var(--ink-2);
+  border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-weight:550;transition:.12s}
+.chip:active{transform:scale(.96)}
+.chip.on{background:var(--series-1);border-color:var(--series-1);color:#fff}
+
+.slrow{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:8px}
+.slval{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:26px;background:transparent;cursor:pointer;margin:0
+}
+input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+  background:var(--series-1);border:3px solid var(--surface);margin-top:-10.5px;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+input[type=range]::-moz-range-track{height:5px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--series-1);border:3px solid var(--surface)}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:-2px;font-variant-numeric:tabular-nums}
+
+/* ---------- results ---------- */
+.hero{border-radius:16px;padding:18px;background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden}
+.hero .cap{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:650}
+.hero .big{font-size:31px;font-weight:700;letter-spacing:-.025em;line-height:1.12;margin:6px 0 2px;word-break:break-word}
+.hero .note{font-size:12.5px;color:var(--ink-2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.tile{background:var(--surface-2);border:1px solid var(--border);border-radius:13px;padding:12px}
+.tile .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:650;line-height:1.3}
+.tile .v{font-size:17px;font-weight:700;margin-top:5px;letter-spacing:-.015em;word-break:break-word}
+.v.crit{color:var(--critical)} .v.good{color:var(--good)} .v.warn{color:var(--warning)}
+
+.rowline{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);font-size:14px}
+.rowline:last-child{border-bottom:none}
+.rowline .k{color:var(--ink-2);flex:1 1 auto;min-width:0}
+.rowline .v{font-weight:650;text-align:right;font-variant-numeric:tabular-nums;flex:0 0 auto;white-space:nowrap}
+.statrow{padding:12px 0;border-bottom:1px solid var(--border)}
+.statrow:last-of-type{border-bottom:none}
+.statrow .k{font-size:12.5px;color:var(--ink-2);line-height:1.4}
+.statrow .v{font-size:19px;font-weight:700;margin-top:4px;letter-spacing:-.015em;word-break:break-word}
+
+/* ---------- banner ---------- */
+.banner{display:flex;gap:11px;border-radius:14px;padding:13px 14px;font-size:13px;line-height:1.5;align-items:flex-start}
+.banner .ic{font-size:16px;line-height:1.2;flex:none}
+.banner.crit{background:color-mix(in srgb,var(--critical) 15%,var(--surface));border:1px solid color-mix(in srgb,var(--critical) 45%,transparent)}
+.banner.warn{background:color-mix(in srgb,var(--warning) 13%,var(--surface));border:1px solid color-mix(in srgb,var(--warning) 40%,transparent)}
+.banner.info{background:var(--surface-2);border:1px solid var(--border)}
+.banner b{font-weight:650}
+
+/* ---------- chart ---------- */
+.chartbox{position:relative;margin:0 -4px}
+svg{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y}
+.tip{position:absolute;pointer-events:none;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:10px;padding:7px 10px;font-size:12px;opacity:0;transition:opacity .1s;
+  box-shadow:0 4px 16px rgba(0,0,0,.35);white-space:nowrap;z-index:5}
+.tip b{display:block;font-size:13px;margin-top:2px}
+.seg{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:10px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;background:transparent;border:none;color:var(--ink-2);font-size:12.5px;
+  padding:7px;border-radius:7px;cursor:pointer;font-weight:600;font-family:inherit}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;margin-top:10px}
+table.tbl th{text-align:left;color:var(--muted);font-weight:650;padding:7px 4px;border-bottom:1px solid var(--axis);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+table.tbl td{padding:7px 4px;border-bottom:1px solid var(--grid);color:var(--ink-2)}
+table.tbl td:last-child,table.tbl th:last-child{text-align:right}
+details{margin-top:10px}
+summary{cursor:pointer;font-size:12.5px;color:var(--series-1);font-weight:600;list-style:none;padding:4px 0}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";display:inline-block;transition:.15s}
+details[open] summary::before{transform:rotate(90deg)}
+
+/* ---------- timeline ---------- */
+.tl{position:relative;padding-left:26px;margin-top:6px}
+.tl::before{content:"";position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:var(--grid)}
+.tli{position:relative;padding:9px 0}
+.tli::before{content:"";position:absolute;left:-23px;top:15px;width:10px;height:10px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--series-1)}
+.tli.hot::before{background:var(--critical);border-color:var(--critical)}
+.tli .d{font-size:12px;color:var(--muted);font-weight:600}
+.tli .t{font-size:14px;font-weight:600;margin-top:1px}
+.tli .x{font-size:12px;color:var(--ink-2);margin-top:2px}
+
+/* ---------- checklist ---------- */
+.chk{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.chk:last-of-type{border-bottom:none}
+.box{width:21px;height:21px;border-radius:6px;border:2px solid var(--axis);flex:none;margin-top:1px;
+  display:grid;place-items:center;font-size:13px;color:transparent;transition:.12s;font-weight:700}
+.chk.on .box{background:var(--critical);border-color:var(--critical);color:#fff}
+.chk span.t{font-size:13.5px;line-height:1.45}
+.chk.on span.t{color:var(--ink)}
+
+.meter{height:9px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:12px 0 8px;border:1px solid var(--border)}
+.meter i{display:block;height:100%;border-radius:99px;transition:width .25s,background .25s}
+
+/* ---------- tabbar ---------- */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);
+  border-top:1px solid var(--border);padding:6px 0 calc(6px + env(safe-area-inset-bottom));
+  backdrop-filter:blur(12px)}
+.tabs{display:flex;max-width:520px;margin:0 auto}
+.tab{flex:1;background:none;border:none;color:var(--muted);font-family:inherit;
+  font-size:10.5px;font-weight:600;padding:5px 2px;cursor:pointer;display:grid;gap:3px;justify-items:center}
+.tab .ic{font-size:19px;line-height:1}
+.tab.on{color:var(--series-1)}
+.screen{display:none;animation:fade .18s ease}
+.screen.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.foot{font-size:11px;color:var(--muted);line-height:1.6;padding:6px 0 20px}
+.foot a{color:var(--series-1)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hd">
+    <div class="brand">
+      <div class="logo">!</div>
+      <div>
+        <h1>Reality Check</h1>
+        <p>Kalkulator investasi &amp; uji akal sehat</p>
+      </div>
+    </div>
+    <button class="iconbtn" id="themeBtn" aria-label="Ganti tema">☀</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ SCREEN 1 : HITUNG ============ -->
+<section class="screen on" id="s-hitung">
+
+  <div class="card">
+    <h3>Skema yang dihitung</h3>
+    <p class="sub">Masukkan angka yang dijanjikan. Kalkulator memakai bunga berbunga harian, lalu memotong biaya penarikan.</p>
+
+    <label class="lb" for="modal">Modal yang disetor</label>
+    <div class="moneywrap">
+      <span class="pfx">Rp</span>
+      <input type="text" id="modal" inputmode="numeric" value="10.000.000" aria-label="Modal">
+    </div>
+    <div class="chips" id="modalChips"></div>
+
+    <div style="height:20px"></div>
+    <div class="slrow"><label class="lb" for="rate" style="margin:0">Keuntungan dijanjikan</label>
+      <span class="slval" id="rateV">2,50% / hari</span></div>
+    <input type="range" id="rate" min="0.5" max="5" step="0.1" value="2.5">
+    <div class="ticks"><span>0,5%</span><span>2,5%</span><span>5%</span></div>
+
+    <div style="height:16px"></div>
+    <div class="slrow"><label class="lb" for="days" style="margin:0">Lama menaruh dana</label>
+      <span class="slval" id="daysV">90 hari</span></div>
+    <input type="range" id="days" min="1" max="730" step="1" value="90">
+    <div class="ticks"><span>1 hr</span><span>1 thn</span><span>2 thn</span></div>
+    <div class="chips" id="dayChips"></div>
+
+    <details>
+      <summary>Ubah biaya penarikan</summary>
+      <div class="grid2" style="margin-top:10px">
+        <div>
+          <label class="lb" for="fee1">Biaya utama</label>
+          <div class="moneywrap"><input type="text" id="fee1" inputmode="decimal" value="6" style="font-size:16px;padding-left:14px"><span class="pfx" style="padding:0 14px 0 0">%</span></div>
+        </div>
+        <div>
+          <label class="lb" for="fee2">Biaya tambahan</label>
+          <div class="moneywrap"><input type="text" id="fee2" inputmode="decimal" value="0.5" style="font-size:16px;padding-left:14px"><span class="pfx" style="padding:0 14px 0 0">%</span></div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div class="hero">
+    <div class="cap">Angka yang muncul di dashboard</div>
+    <div class="big" id="hGross">Rp 92,3 juta</div>
+    <div class="note" id="hGrossFull"></div>
+    <div class="grid2">
+      <div class="tile"><div class="k">Potongan penarikan <span id="feeLbl">6,5%</span></div><div class="v crit" id="hFee">–</div></div>
+      <div class="tile"><div class="k">Benar-benar diterima</div><div class="v good" id="hNet">–</div></div>
+    </div>
+    <div class="grid2">
+      <div class="tile"><div class="k">Keuntungan bersih</div><div class="v" id="hProfit">–</div></div>
+      <div class="tile"><div class="k">Setara bunga / tahun</div><div class="v warn" id="hApy">–</div></div>
+    </div>
+  </div>
+
+  <div class="banner crit" style="margin-top:12px">
+    <span class="ic">⚠</span>
+    <div><b>Angka di atas adalah janji, bukan hasil.</b> Semua nilai ini hanya berlaku kalau skema benar-benar sanggup membayar. Buka tab <b>Akal Sehat</b> untuk melihat apakah itu mungkin.</div>
+  </div>
+
+  <div class="card">
+    <h3>Pertumbuhan nilai</h3>
+    <div class="seg" role="tablist">
+      <button class="on" data-scale="lin">Skala biasa</button>
+      <button data-scale="log">Skala logaritmik</button>
+    </div>
+    <div class="chartbox" id="cb1">
+      <svg id="chart1" viewBox="0 0 340 210" role="img" aria-labelledby="c1t"></svg>
+      <title id="c1t" class="sr">Grafik nilai investasi terhadap waktu</title>
+      <div class="tip" id="tip1"></div>
+    </div>
+    <p class="sub" id="chartNote" style="margin:10px 0 0;font-size:11.5px"></p>
+    <details>
+      <summary>Lihat sebagai tabel</summary>
+      <table class="tbl"><thead><tr><th>Hari</th><th>Nilai di layar</th><th>Diterima setelah fee</th></tr></thead>
+      <tbody id="tbl1"></tbody></table>
+    </details>
+  </div>
+
+  <div class="card">
+    <h3>Titik balik modal</h3>
+    <p class="sub" style="margin-bottom:0" id="beText"></p>
+    <div class="banner info" style="margin-top:12px">
+      <span class="ic">💡</span>
+      <div>Biaya penarikan yang terlihat besar justru bagian dari daya tariknya. Karena "keuntungan harian" dibuat sangat tinggi, fee 6,5% terasa remeh &mdash; padahal fungsi aslinya menahan uang Anda tetap di dalam sistem selama mungkin.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 2 : AKAL SEHAT ============ -->
+<section class="screen" id="s-akal">
+
+  <div class="hero">
+    <div class="cap">Kalau dijalankan setahun penuh</div>
+    <div class="big" id="aApy">–</div>
+    <div class="note">imbal hasil per tahun yang tersirat dari angka harian itu</div>
+    <div class="grid2">
+      <div class="tile"><div class="k">Deposito bank BUMN</div><div class="v" style="color:var(--series-1)">3,25%<span style="font-size:12px;color:var(--muted)"> /thn</span></div></div>
+      <div class="tile"><div class="k">Skema ini lebih tinggi</div><div class="v crit" id="aMult">–</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Modal Rp <span id="aModal">10 juta</span> akan melewati…</h3>
+    <p class="sub">Berapa hari yang dibutuhkan kalau janji itu benar-benar terjadi.</p>
+    <div class="tl" id="tlist"></div>
+  </div>
+
+  <div class="card">
+    <h3>Berapa lama untuk menyamai setahun instrumen resmi?</h3>
+    <p class="sub">Keuntungan yang butuh setahun penuh di instrumen resmi, konon bisa dicapai skema ini dalam hitungan hari.</p>
+    <div id="matchList"></div>
+  </div>
+
+  <div class="card">
+    <h3>Uangnya datang dari mana?</h3>
+    <p class="sub">Skema yang menjanjikan return tetap harian tidak menghasilkan uang. Uang untuk membayar member lama berasal dari setoran member baru &mdash; jadi jumlah member harus tumbuh secepat janji returnnya.</p>
+    <div class="statrow"><div class="k">Dana masuk kalau 100 orang menyetor sebesar modal Anda</div><div class="v" id="pz1">–</div></div>
+    <div class="statrow"><div class="k">Yang harus dibayarkan skema setelah 1 tahun</div><div class="v warn" id="pz2">–</div></div>
+    <div class="statrow"><div class="k">Skema butuh lebih banyak member daripada seluruh penduduk Indonesia (±284 juta) pada</div><div class="v crit" id="pz3">–</div></div>
+    <div class="banner crit" style="margin-top:14px">
+      <span class="ic">⚠</span>
+      <div>Ketika pertumbuhan member berhenti, pembayaran berhenti. Yang masuk paling akhir kehilangan seluruh modalnya &mdash; dan biasanya jumlah merekalah yang paling banyak.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 3 : BANDINGKAN ============ -->
+<section class="screen" id="s-banding">
+  <div class="card">
+    <h3>Modal yang sama, di instrumen resmi</h3>
+    <p class="sub" id="cmpSub">–</p>
+    <div class="chartbox" id="cb2">
+      <svg id="chart2" viewBox="0 0 340 250" role="img" aria-labelledby="c2t"></svg>
+      <title id="c2t" class="sr">Perbandingan hasil antar instrumen</title>
+      <div class="tip" id="tip2"></div>
+    </div>
+    <table class="tbl"><thead><tr><th>Instrumen</th><th>Return/thn</th><th>Hasil</th></tr></thead>
+      <tbody id="tbl2"></tbody></table>
+    <p class="sub" style="margin:12px 0 0;font-size:11.5px">Deposito &amp; ORI adalah imbal hasil kontraktual. IHSG dan Berkshire adalah rata-rata historis jangka panjang &mdash; hasil sebenarnya naik-turun dan bisa negatif di tahun tertentu.</p>
+  </div>
+
+  <div class="card">
+    <h3>Yang realistis untuk dikejar</h3>
+    <div class="rowline"><span class="k">Deposito bank BUMN (Jul 2026)</span><span class="v">2,25&ndash;3,50%</span></div>
+    <div class="rowline"><span class="k">ORI029 tenor 3 / 6 tahun</span><span class="v">5,45% / 5,80%</span></div>
+    <div class="rowline"><span class="k">IHSG, rata-rata jangka panjang</span><span class="v">±10%</span></div>
+    <div class="rowline"><span class="k">Warren Buffett, ±60 tahun</span><span class="v">±20%</span></div>
+    <div class="banner info" style="margin-top:14px">
+      <span class="ic">📌</span>
+      <div>Investor terbaik dalam sejarah mencatat sekitar <b>20% per tahun</b>. Skema yang menjanjikan 2% <b>per hari</b> mengklaim mengalahkan itu setiap dua minggu sekali.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 4 : RED FLAG ============ -->
+<section class="screen" id="s-flag">
+  <div class="card">
+    <h3>Uji 10 tanda bahaya</h3>
+    <p class="sub">Centang yang cocok dengan tawaran yang sedang Anda pertimbangkan.</p>
+    <div id="flagList"></div>
+    <div class="meter"><i id="mBar" style="width:0%;background:var(--good)"></i></div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <span style="font-size:13px;font-weight:650" id="mLabel">Belum ada tanda bahaya</span>
+      <span style="font-size:12px;color:var(--muted)"><b id="mCount">0</b>/10</span>
+    </div>
+    <div id="mNote" style="margin-top:14px"></div>
+  </div>
+
+  <div class="card">
+    <h3>Cek dulu sebelum setor</h3>
+    <div class="rowline"><span class="k">Kontak OJK</span><span class="v">157</span></div>
+    <div class="rowline"><span class="k">WhatsApp OJK</span><span class="v">081&#8209;157&#8209;157&#8209;157</span></div>
+    <div class="rowline"><span class="k">Cek izin &amp; daftar entitas ilegal</span><span class="v"><a href="https://ojk.go.id/waspada-investasi/id/alert-portal/Pages/default.aspx" target="_blank" rel="noopener" style="color:var(--series-1)">ojk.go.id</a></span></div>
+    <p class="sub" style="margin:14px 0 0">Satgas PASTI (OJK bersama kementerian dan aparat) rutin memblokir entitas keuangan ilegal. Nama perusahaan yang sah selalu bisa dicari di daftar izin OJK &mdash; kalau tidak ketemu, itu jawabannya.</p>
+  </div>
+
+  <div class="card">
+    <h3>Tiga pertanyaan yang jarang bisa dijawab</h3>
+    <p class="sub" style="margin-bottom:12px">Ajukan ini ke siapa pun yang menawarkan skema serupa.</p>
+    <div class="rowline" style="display:block"><b>1. Dari aktivitas apa persisnya keuntungan 2% sehari itu dihasilkan?</b><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Jawaban seperti "trading AI" atau "robot" tanpa laporan audit bukan jawaban.</div></div>
+    <div class="rowline" style="display:block"><b>2. Boleh lihat mutasi rekening penarikan, bukan screenshot dashboard?</b><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Angka di dashboard bisa diketik siapa saja. Mutasi bank tidak.</div></div>
+    <div class="rowline" style="display:block"><b>3. Kalau semua member menarik dana besok, apakah dananya ada?</b><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Skema Ponzi selalu gagal di pertanyaan ini.</div></div>
+  </div>
+
+  <div class="foot">
+    Alat ini dibuat untuk edukasi. Angka pembanding: suku bunga deposito bank BUMN per 20 Juli 2026 (CNBC Indonesia), kupon ORI029 (Bareksa), PDB Indonesia 2025 Rp 23.821 triliun (BPS/CNBC Indonesia). Bukan nasihat investasi.
+  </div>
+</section>
+
+</main>
+
+<nav>
+  <div class="tabs">
+    <button class="tab on" data-s="hitung"><span class="ic">🧮</span>Hitung</button>
+    <button class="tab" data-s="akal"><span class="ic">🧠</span>Akal Sehat</button>
+    <button class="tab" data-s="banding"><span class="ic">📊</span>Bandingkan</button>
+    <button class="tab" data-s="flag"><span class="ic">🚩</span>Red Flag</button>
+  </div>
+</nav>
+
+<script>
+"use strict";
+/* ---------------- format helpers ---------------- */
+const UNITS=[[1e21,"sekstiliun"],[1e18,"kuintiliun"],[1e15,"kuadriliun"],[1e12,"triliun"],[1e9,"miliar"],[1e6,"juta"],[1e3,"ribu"]];
+const nf=(x,d)=>x.toLocaleString("id-ID",{minimumFractionDigits:d,maximumFractionDigits:d});
+const trim=s=>s.includes(",")?s.replace(/,?0+$/,""):s;
+function rpShort(x){
+  if(!isFinite(x))return "tak terhingga";
+  if(x>=1e24){const e=Math.floor(Math.log10(x));return "Rp "+nf(x/Math.pow(10,e),2)+" × 10"+sup(e);}
+  for(const [v,n] of UNITS){ if(x>=v){const q=x/v;return "Rp "+trim(nf(q,q<10?2:q<100?1:0))+" "+n;} }
+  return "Rp "+nf(Math.round(x),0);
+}
+function rpFull(x){
+  if(!isFinite(x)||x>=1e18)return "";
+  return "Rp "+nf(Math.round(x),0);
+}
+const SUPS="⁰¹²³⁴⁵⁶⁷⁸⁹";
+const sup=n=>String(n).split("").map(c=>SUPS[+c]||c).join("");
+function pctFmt(p){
+  if(p>=1e6)return nf(p/1e6,1)+" juta%";
+  if(p>=1e4)return nf(p,0)+"%";
+  return nf(p,p<10?2:1)+"%";
+}
+function multFmt(m){
+  if(m>=1e6)return nf(m/1e6,1)+" juta×";
+  if(m>=1e3)return nf(m/1e3,1)+" ribu×";
+  return nf(m,m<10?1:0)+"×";
+}
+function hariFmt(d){
+  if(!isFinite(d))return "tidak pernah";
+  if(d<0)return "sudah terlampaui";
+  if(d<1)return "kurang dari 1 hari";
+  if(d<60)return nf(d,d<10?1:0)+" hari";
+  if(d<365)return nf(d,0)+" hari (±"+nf(d/30.44,1)+" bulan)";
+  return nf(d,0)+" hari (±"+nf(d/365,1)+" tahun)";
+}
+const parseNum=s=>{const v=parseFloat(String(s).replace(/\./g,"").replace(",","."));return isFinite(v)?v:0;};
+const parseRp=s=>{const d=String(s).replace(/[^\d]/g,"");return d?parseInt(d,10):0;};
+
+/* ---------------- state ---------------- */
+const S={modal:10000000,rate:2.5,days:90,fee:6.5,scale:"lin"};
+const $=id=>document.getElementById(id);
+
+/* ---------------- chips ---------------- */
+const MODALS=[[1e6,"1 jt"],[5e6,"5 jt"],[1e7,"10 jt"],[5e7,"50 jt"],[1e8,"100 jt"],[5e8,"500 jt"]];
+$("modalChips").innerHTML=MODALS.map(m=>`<button class="chip" data-v="${m[0]}">${m[1]}</button>`).join("");
+const DAYS=[[7,"1 mgg"],[30,"1 bln"],[90,"3 bln"],[180,"6 bln"],[365,"1 thn"],[730,"2 thn"]];
+$("dayChips").innerHTML=DAYS.map(d=>`<button class="chip" data-v="${d[0]}">${d[1]}</button>`).join("");
+
+$("modalChips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;
+  S.modal=+b.dataset.v; $("modal").value=nf(S.modal,0); render();});
+$("dayChips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;
+  S.days=+b.dataset.v; $("days").value=S.days; render();});
+
+$("modal").addEventListener("input",e=>{
+  const v=parseRp(e.target.value); S.modal=Math.min(v,1e15);
+  e.target.value=S.modal?nf(S.modal,0):""; render();
+});
+$("modal").addEventListener("blur",()=>{if(!S.modal){S.modal=1e6;$("modal").value=nf(1e6,0);render();}});
+$("rate").addEventListener("input",e=>{S.rate=+e.target.value;render();});
+$("days").addEventListener("input",e=>{S.days=+e.target.value;render();});
+const feeUpd=()=>{S.fee=Math.min(parseNum($("fee1").value)+parseNum($("fee2").value),99);render();};
+$("fee1").addEventListener("input",feeUpd); $("fee2").addEventListener("input",feeUpd);
+
+document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".seg button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); S.scale=b.dataset.scale; render();
+}));
+
+/* ---------------- tabs ---------------- */
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".screen").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on"); $("s-"+t.dataset.s).classList.add("on");
+  window.scrollTo({top:0,behavior:"instant"}); render();
+}));
+
+/* ---------------- theme ---------------- */
+$("themeBtn").addEventListener("click",()=>{
+  const dark=document.documentElement.dataset.theme==="dark";
+  document.documentElement.dataset.theme=dark?"light":"dark";
+  $("themeBtn").textContent=dark?"☾":"☀";
+  render();
+});
+
+/* ---------------- math ---------------- */
+const val=(d,r=S.rate)=>S.modal*Math.pow(1+r/100,d);
+const keep=()=>1-S.fee/100;
+const apy=()=>(Math.pow(1+S.rate/100,365)-1)*100;
+const daysTo=(target,r=S.rate)=>Math.log(target/S.modal)/Math.log(1+r/100);
+
+/* ---------------- chart 1 ---------------- */
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function drawLine(){
+  const W=340,H=210,L=46,R=8,T=12,B=30, pw=W-L-R, ph=H-T-B;
+  const N=60, pts=[];
+  for(let i=0;i<=N;i++){const d=S.days*i/N; pts.push([d,val(d)]);}
+  const maxV=pts[N][1], minV=S.modal;
+  const useLog=S.scale==="log"&&maxV/minV>3;
+  const yOf=v=>{
+    if(useLog){const a=Math.log10(minV),b=Math.log10(maxV);return T+ph-(Math.log10(v)-a)/(b-a||1)*ph;}
+    return T+ph-(v-0)/(maxV||1)*ph;
+  };
+  const xOf=d=>L+(d/(S.days||1))*pw;
+  const ink=css("--muted"),grid=css("--grid"),axis=css("--axis"),s1=css("--series-1");
+  let g="";
+  // gridlines + y labels
+  const ticks=[];
+  if(useLog){
+    const a=Math.ceil(Math.log10(minV)),b=Math.floor(Math.log10(maxV));
+    const step=Math.max(1,Math.ceil((b-a)/4));
+    for(let e=a;e<=b;e+=step)ticks.push(Math.pow(10,e));
+    if(ticks.length<3){ticks.length=0;
+      for(let i=0;i<=4;i++)ticks.push(minV*Math.pow(maxV/minV,i/4));}
+  }else{
+    for(let i=0;i<=4;i++)ticks.push(maxV*i/4);
+  }
+  ticks.forEach(v=>{const y=yOf(v);if(!isFinite(y))return;
+    g+=`<line x1="${L}" y1="${y.toFixed(1)}" x2="${W-R}" y2="${y.toFixed(1)}" stroke="${grid}" stroke-width="1"/>`;
+    g+=`<text x="${L-6}" y="${(y+3.5).toFixed(1)}" fill="${ink}" font-size="9" text-anchor="end" font-family="system-ui">${v>0?rpShort(v).replace("Rp ",""):"0"}</text>`;});
+  // area + line
+  let dpath="",apath=`M ${xOf(0)} ${yOf(pts[0][1]).toFixed(1)}`;
+  pts.forEach((p,i)=>{const x=xOf(p[0]).toFixed(1),y=yOf(p[1]).toFixed(1);
+    dpath+=(i?" L ":"M ")+x+" "+y; if(i)apath+=` L ${x} ${y}`;});
+  apath+=` L ${xOf(S.days).toFixed(1)} ${T+ph} L ${xOf(0)} ${T+ph} Z`;
+  g+=`<path d="${apath}" fill="${s1}" opacity="0.12"/>`;
+  g+=`<path d="${dpath}" fill="none" stroke="${s1}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // end dot + label
+  const ex=xOf(S.days),ey=yOf(maxV);
+  g+=`<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="4.5" fill="${s1}" stroke="${css("--surface")}" stroke-width="2"/>`;
+  // x axis
+  g+=`<line x1="${L}" y1="${T+ph}" x2="${W-R}" y2="${T+ph}" stroke="${axis}" stroke-width="1"/>`;
+  [0,.25,.5,.75,1].forEach(f=>{const d=Math.round(S.days*f);
+    g+=`<text x="${xOf(d).toFixed(1)}" y="${H-12}" fill="${ink}" font-size="9" text-anchor="${f===0?"start":f===1?"end":"middle"}" font-family="system-ui">${d}</text>`;});
+  g+=`<text x="${(L+pw/2).toFixed(0)}" y="${H-1}" fill="${ink}" font-size="9" text-anchor="middle" font-family="system-ui">hari</text>`;
+  g+=`<line id="cross" x1="0" y1="${T}" x2="0" y2="${T+ph}" stroke="${axis}" stroke-width="1" opacity="0"/>`;
+  g+=`<circle id="cdot" r="5" fill="${s1}" stroke="${css("--surface")}" stroke-width="2" opacity="0"/>`;
+  $("chart1").innerHTML=g;
+  $("chartNote").textContent=useLog
+    ? "Skala logaritmik: tiap langkah ke atas berarti kelipatan yang sama. Garisnya lurus — itu tanda pertumbuhan eksponensial murni, pola yang tidak dimiliki investasi nyata mana pun."
+    : "Kurva menukik seperti ini disebut hockey stick. Di dunia nyata, tidak ada aset yang tumbuh begini tanpa henti — kalau ada, semua uang di dunia akan berakhir di satu tempat.";
+  // hover
+  const svg=$("chart1"),tip=$("tip1"),cross=svg.querySelector("#cross"),cdot=svg.querySelector("#cdot");
+  const move=ev=>{
+    const r=svg.getBoundingClientRect();
+    const cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left;
+    const px=cx/r.width*W;
+    let d=Math.round(((px-L)/pw)*S.days); d=Math.max(0,Math.min(S.days,d));
+    const v=val(d),x=xOf(d),y=yOf(v);
+    cross.setAttribute("x1",x);cross.setAttribute("x2",x);cross.setAttribute("opacity","1");
+    cdot.setAttribute("cx",x);cdot.setAttribute("cy",y);cdot.setAttribute("opacity","1");
+    tip.style.opacity="1";
+    tip.innerHTML=`Hari ke-${d}<b>${rpShort(v)}</b><span style="color:var(--muted);font-size:11px">diterima ${rpShort(v*keep())}</span>`;
+    const tw=tip.offsetWidth||120;
+    tip.style.left=Math.max(0,Math.min(r.width-tw,x/W*r.width-tw/2))+"px";
+    tip.style.top=Math.max(0,y/H*r.height-56)+"px";
+  };
+  ["mousemove","touchmove","touchstart"].forEach(e=>svg.addEventListener(e,move,{passive:true}));
+  ["mouseleave","touchend"].forEach(e=>svg.addEventListener(e,()=>{
+    tip.style.opacity="0";cross.setAttribute("opacity","0");cdot.setAttribute("opacity","0");}));
+}
+
+/* ---------------- chart 2 : comparison ---------------- */
+const INSTR=[
+  {n:"Deposito BUMN",r:3.25,c:"--series-1"},
+  {n:"ORI029 (6 thn)",r:5.80,c:"--series-1"},
+  {n:"IHSG jangka panjang",r:10,c:"--series-1"},
+  {n:"Warren Buffett",r:19.8,c:"--series-1"},
+];
+function drawBars(){
+  const W=340,H=250,L=112,R=52,T=10,B=8, pw=W-L-R;
+  const rows=INSTR.map(o=>({...o,v:S.modal*Math.pow(1+o.r/100,S.days/365)}));
+  rows.push({n:"Skema ini",r:apy(),v:val(S.days),c:"--critical",bad:true});
+  const maxV=Math.max(...rows.map(r=>r.v));
+  const useLog=maxV/S.modal>50;
+  const base=S.modal*0.9;
+  const wOf=v=>{
+    if(useLog){const a=Math.log10(base),b=Math.log10(maxV);return Math.max(3,(Math.log10(v)-a)/(b-a||1)*pw);}
+    return Math.max(3,v/maxV*pw);
+  };
+  const bh=26,gap=(H-T-B-rows.length*bh)/(rows.length-1);
+  const ink=css("--muted"),ink2=css("--ink-2");
+  let g="";
+  rows.forEach((r,i)=>{
+    const y=T+i*(bh+gap), w=wOf(r.v), col=css(r.c);
+    g+=`<text x="${L-8}" y="${y+bh/2+3.5}" fill="${ink2}" font-size="10" text-anchor="end" font-family="system-ui">${r.n}</text>`;
+    g+=`<rect x="${L}" y="${y}" width="${w.toFixed(1)}" height="${bh}" rx="4" fill="${col}" data-i="${i}"/>`;
+    const lx=L+w+6, anchor=lx>W-56?"end":"start";
+    g+=`<text x="${(anchor==="end"?L+w-6:lx).toFixed(1)}" y="${y+bh/2+3.5}" fill="${anchor==="end"?"#fff":ink2}" font-size="9.5" text-anchor="${anchor}" font-weight="600" font-family="system-ui">${rpShort(r.v).replace("Rp ","")}</text>`;
+  });
+  if(useLog)g+=`<text x="${L}" y="${H-1}" fill="${ink}" font-size="8.5" font-family="system-ui">skala logaritmik — tiap langkah = 10× lipat</text>`;
+  $("chart2").innerHTML=g;
+  $("tbl2").innerHTML=rows.map(r=>`<tr${r.bad?' style="color:var(--critical);font-weight:650"':''}><td>${r.n}</td><td>${pctFmt(r.r)}</td><td>${rpShort(r.v).replace("Rp ","")}</td></tr>`).join("");
+  $("cmpSub").textContent=`Rp ${nf(S.modal,0)} ditaruh selama ${S.days} hari, dibandingkan dengan imbal hasil instrumen resmi pada periode yang sama.`;
+}
+
+/* ---------------- akal sehat ---------------- */
+const MILE=[
+  [1e8,"Rp 100 juta"],
+  [1e9,"Rp 1 miliar — resmi jadi miliarder"],
+  [1e11,"Rp 100 miliar"],
+  [1e12,"Rp 1 triliun"],
+  [23821e12,"Rp 23.821 triliun — seluruh PDB Indonesia 2025"],
+];
+function renderAkal(){
+  $("aApy").textContent=pctFmt(apy())+" / tahun";
+  $("aModal").textContent=rpShort(S.modal).replace("Rp ","");
+  $("aMult").textContent=multFmt(apy()/3.25);
+  $("tlist").innerHTML=MILE.map(m=>{
+    const d=daysTo(m[0]);
+    const hot=m[0]>=1e12;
+    let x;
+    if(d<=0) x="modal awal sudah di atas angka ini";
+    else if(d<31) x="kurang dari sebulan";
+    else if(d<365) x="sekitar "+nf(d/30.44,1).replace(".",",")+" bulan";
+    else x="sekitar "+nf(d/365,1).replace(".",",")+" tahun";
+    return `<div class="tli${hot?" hot":""}"><div class="d">${d<=0?"sudah terlampaui":"hari ke-"+nf(Math.ceil(d),0)}</div>
+      <div class="t">${m[1]}</div>
+      <div class="x">${x}</div></div>`;
+  }).join("");
+  $("matchList").innerHTML=INSTR.map(o=>{
+    const d=Math.log(1+o.r/100)/Math.log(1+S.rate/100);
+    return `<div class="rowline"><span class="k">${o.n} <span style="color:var(--muted)">(${nf(o.r,2)}%/thn)</span></span><span class="v">${d<1?nf(d*24,1)+" jam":nf(d,1)+" hari"}</span></div>`;
+  }).join("");
+  const g=Math.pow(1+S.rate/100,365), pool=S.modal*100;
+  $("pz1").textContent=rpShort(pool);
+  $("pz2").textContent=rpShort(pool*g)+" ("+multFmt(g)+" lipat)";
+  $("pz3").textContent=hariFmt(Math.log(284e6/100)/Math.log(1+S.rate/100));
+}
+
+/* ---------------- red flags ---------------- */
+const FLAGS=[
+ "Keuntungan dijanjikan tetap dan pasti, misalnya sekian persen per hari atau per minggu",
+ "Imbal hasilnya jauh di atas bunga bank — lebih dari 1% per bulan",
+ "Ada bonus kalau mengajak orang lain bergabung, apalagi berjenjang",
+ "Menarik dana sulit, lama, atau kena potongan besar",
+ "Tidak punya izin OJK atau Bappebti untuk produk yang ditawarkan",
+ "Model bisnisnya kabur — \"trading AI\", \"robot\", \"mining\" — tanpa laporan yang bisa diaudit",
+ "Ditekan buru-buru: kuota terbatas, harga naik besok, promo hari ini saja",
+ "Bukti keuntungan hanya screenshot dashboard, bukan mutasi rekening",
+ "Pengelolanya anonim, atau alamat kantornya tidak jelas",
+ "Diminta transfer ke rekening pribadi, bukan rekening atas nama perusahaan",
+];
+$("flagList").innerHTML=FLAGS.map((f,i)=>`<div class="chk" data-i="${i}"><div class="box">✓</div><span class="t">${f}</span></div>`).join("");
+$("flagList").addEventListener("click",e=>{const c=e.target.closest(".chk");if(!c)return;
+  c.classList.toggle("on"); scoreFlags();});
+function scoreFlags(){
+  const n=$("flagList").querySelectorAll(".chk.on").length;
+  $("mCount").textContent=n;
+  $("mBar").style.width=(n*10)+"%";
+  let col,lab,note;
+  if(n===0){col="--good";lab="Belum ada tanda bahaya";note='<div class="banner info"><span class="ic">✓</span><div>Belum ada yang tercentang. Tetap cek izin di OJK sebelum menyetor dana.</div></div>';}
+  else if(n<=2){col="--warning";lab="Perlu diperiksa lebih jauh";note='<div class="banner warn"><span class="ic">⚠</span><div><b>Jangan buru-buru.</b> Minta dokumen legalitas dan cek namanya di daftar izin OJK sebelum lanjut.</div></div>';}
+  else if(n<=4){col="--serious";lab="Banyak kemiripan dengan skema bodong";note='<div class="banner warn"><span class="ic">⚠</span><div><b>Risiko tinggi.</b> Pola ini sangat mirip investasi ilegal. Jangan setor dana tambahan, dan cek ke Kontak OJK 157.</div></div>';}
+  else{col="--critical";lab="Ciri khas skema Ponzi";note='<div class="banner crit"><span class="ic">🚩</span><div><b>Hentikan.</b> Kombinasi tanda ini adalah pola klasik skema Ponzi. Jangan setor dana lagi, dokumentasikan semua bukti transfer dan percakapan, lalu laporkan ke Kontak OJK 157 atau WhatsApp 081-157-157-157.</div></div>';}
+  $("mBar").style.background=`var(${col})`;
+  $("mLabel").textContent=lab; $("mLabel").style.color=`var(${col})`;
+  $("mNote").innerHTML=note;
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  $("rateV").textContent=nf(S.rate,S.rate%1?1:0).replace(".",",")+"% / hari";
+  $("daysV").textContent=S.days+" hari";
+  $("feeLbl").textContent=nf(S.fee,S.fee%1?1:0)+"%";
+  document.querySelectorAll("#modalChips .chip").forEach(c=>c.classList.toggle("on",+c.dataset.v===S.modal));
+  document.querySelectorAll("#dayChips .chip").forEach(c=>c.classList.toggle("on",+c.dataset.v===S.days));
+
+  const gross=val(S.days), net=gross*keep(), fee=gross-net, profit=net-S.modal;
+  $("hGross").textContent=rpShort(gross);
+  $("hGrossFull").textContent=rpFull(gross);
+  $("hFee").textContent=rpShort(fee);
+  $("hNet").textContent=rpShort(net);
+  $("hProfit").textContent=(profit>=0?"+":"−")+rpShort(Math.abs(profit)).replace("Rp ","Rp ");
+  $("hProfit").className="v "+(profit>=0?"good":"crit");
+  $("hApy").textContent=pctFmt(apy());
+
+  const be=Math.log(1/keep())/Math.log(1+S.rate/100);
+  $("beText").innerHTML=`Dengan biaya penarikan <b>${nf(S.fee,S.fee%1?1:0)}%</b>, uang Anda baru "balik modal" saat ditarik setelah <b>${hariFmt(be)}</b>. Sebelum itu, menarik dana justru rugi. Pada hari ke-${S.days} Anda ${profit>=0?"secara teori untung":"secara teori masih rugi"} ${rpShort(Math.abs(profit))}.`;
+
+  // table
+  const marks=[...new Set([0,Math.round(S.days*.25),Math.round(S.days*.5),Math.round(S.days*.75),S.days])];
+  $("tbl1").innerHTML=marks.map(d=>{const v=val(d);
+    return `<tr><td>${d}</td><td>${rpShort(v).replace("Rp ","")}</td><td>${rpShort(v*keep()).replace("Rp ","")}</td></tr>`;}).join("");
+
+  drawLine(); drawBars(); renderAkal();
+}
+scoreFlags();
+render();
+window.addEventListener("resize",()=>{drawLine();drawBars();});
+
+/* offline support — hanya aktif di secure context (https atau localhost), bukan file:// */
+if("serviceWorker" in navigator && window.isSecureContext){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
