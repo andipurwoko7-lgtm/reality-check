@@ -1,5 +1,8 @@
 # RUNBOOK Phase 0 — Uji di Laptop Windows
 
+> **DIGANTIKAN untuk urutan eksekusi oleh `GUIDED_EXECUTION.md`** (Step A–F dengan gerbang review). Dokumen ini tinggal rujukan detail untuk Step B–F; jangan dijalankan sekaligus. Pin `av>=14,<17` di bawah berstatus **PHASE0_TEST_PIN**, bukan dependency final.
+
+
 Perkiraan waktu: **3–4 jam** (bisa dipecah 2 sesi). Semua alat di folder ini **sekali pakai**, bukan kode produksi.
 
 ## Aturan keras

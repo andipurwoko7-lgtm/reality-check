@@ -1,6 +1,6 @@
 # PHASE 0 REPORT — Discovery, Policy Check, Technical Proof of Concept
 
-Tanggal: 8 Oktober 2026 · Baseline: `RENCANA_PEMBANGUNAN.md` v1.1 · Status: **Phase 0 PARSIAL — siap dieksekusi di laptop, belum selesai**
+Tanggal: 8 Oktober 2026 · Baseline: `RENCANA_PEMBANGUNAN.md` v1.1 · Status: **Phase 0 PARSIAL — verdict CONDITIONAL GO tetap berlaku; eksekusi di laptop dipecah Step A–F dengan gerbang review (lihat `phase0/GUIDED_EXECUTION.md`). Gate A menunggu hasil inventaris.**
 
 **Label status yang dipakai di seluruh laporan** (supaya tidak ada klaim yang tampak seperti hasil uji padahal bukan):
 
@@ -28,7 +28,7 @@ Sandbox ini adalah container cloud Linux tanpa GPU. Ia tidak punya Zoom, headset
 
 | # | Temuan | Status |
 |---|---|---|
-| F1 | `faster-whisper 1.2.1` rusak dengan `av` terbaru (19.x): `unexpected keyword argument 'metadata_errors'`. `av` 15.1.0/16.0.1 berfungsi. Instalasi tanpa pin bisa gagal di laptopmu | VERIFIED (Linux) |
+| F1 | `faster-whisper 1.2.1` rusak dengan `av` terbaru (19.x): `unexpected keyword argument 'metadata_errors'`. `av` 15.1.0/16.0.1 berfungsi. Pin versi hanya `PHASE0_TEST_PIN`, bukan dependency final; pasangan versi Windows ditentukan di Step C | VERIFIED (Linux) |
 | F2 | Parser angka deterministik memberi hasil benar untuk 11 kelompok kasus (termasuk "empat ratus sembilan puluh lima miliar rupiah" → Rp495 miliar) dan **tidak mengarang** mata uang/angka ambigu. Tes menemukan 1 bug (skala sesudah desimal) yang sudah diperbaiki | VERIFIED |
 | F3 | Evaluator mengukur dengan benar: ground truth vs dirinya = WER 0 / fakta 100%; transkrip yang sengaja dirusak turun sesuai; kebocoran mic terdeteksi (0% vs 36%) | VERIFIED |
 | F4 | Logika graf audio halaman uji memisahkan mic/sistem: file stereo menaruh sinyal mic di kiri dan sistem di kanan, file `mic` dan `system` terpisah murni | SMOKE (sinyal sintetis) |
