@@ -1,0 +1,46 @@
+{
+  "_note": "Fakta yang HARUS terbaca benar dari rapat simulasi. kind: idr|pct|plain|date. value dalam satuan dasar (rupiah penuh, persen sebagai angka).",
+  "numbers": [
+    {"id": "N01", "what": "outstanding MTN",        "kind": "idr",   "value": "495000000000"},
+    {"id": "N02", "what": "seri A",                 "kind": "idr",   "value": "250000000000"},
+    {"id": "N03", "what": "seri B",                 "kind": "idr",   "value": "245000000000"},
+    {"id": "N04", "what": "kupon seri A",           "kind": "pct",   "value": "12"},
+    {"id": "N05", "what": "rate refinancing",       "kind": "pct",   "value": "8"},
+    {"id": "N06", "what": "penghematan bunga/thn",  "kind": "idr",   "value": "10000000000"},
+    {"id": "N07", "what": "biaya penerbitan %",     "kind": "pct",   "value": "0.5"},
+    {"id": "N08", "what": "biaya penerbitan Rp",    "kind": "idr",   "value": "1250000000"},
+    {"id": "N09", "what": "hunian hotel awal",      "kind": "pct",   "value": "65"},
+    {"id": "N10", "what": "hunian hotel baru",      "kind": "pct",   "value": "72"},
+    {"id": "N11", "what": "pre-sales per bulan",    "kind": "idr",   "value": "80000000000"},
+    {"id": "N12", "what": "DSCR proyeksi (kali)",   "kind": "plain", "value": "1.6"},
+    {"id": "N13", "what": "DSCR minimum (kali)",    "kind": "plain", "value": "1.25"},
+    {"id": "N14", "what": "EBITDA tahun depan",     "kind": "idr",   "value": "120000000000"},
+    {"id": "N15", "what": "valuasi hotel Bali",     "kind": "idr",   "value": "2350000000000"},
+    {"id": "N16", "what": "kenaikan bunga (bps)",   "kind": "plain", "value": "150"},
+    {"id": "N17", "what": "ambang bunga naik",      "kind": "pct",   "value": "9"},
+    {"id": "N18", "what": "tenor (tahun)",          "kind": "plain", "value": "5"},
+    {"id": "N19", "what": "tahun 2026",             "kind": "plain", "value": "2026"},
+    {"id": "N20", "what": "tahun 2027",             "kind": "plain", "value": "2027"}
+  ],
+  "dates": [
+    {"id": "D01", "what": "tanggal rapat",              "value": "8 oktober"},
+    {"id": "D02", "what": "deadline cash flow (PIC Andi)", "value": "12 oktober"},
+    {"id": "D03", "what": "deadline draft CSPA",        "value": "14 oktober"},
+    {"id": "D04", "what": "rapat berikutnya",           "value": "15 oktober"}
+  ],
+  "expected_for_phase5_not_phase0": {
+    "_note": "Dipakai nanti untuk menguji analisis AI. Ditaruh di sini agar ground truth satu tempat.",
+    "action_items": [
+      {"task": "Perbarui proyeksi cash flow", "pic": "Andi", "deadline": "2026-10-12"},
+      {"task": "Serahkan draft CSPA ke Bu Sari", "pic": "Andi", "deadline": "2026-10-14"},
+      {"task": "Kirim term sheet ke Mandiri dan BNI", "pic": "Budi", "deadline": "2026-10-09 (Jumat ini)"},
+      {"task": "Follow up auditor soal going concern", "pic": "Sari", "deadline": null, "flag": "UNKNOWN_DEADLINE"},
+      {"task": "Cek kendala perizinan divestasi hotel Bali", "pic": "Sari", "deadline": null, "flag": "UNKNOWN_DEADLINE"},
+      {"task": "Siapkan model sensitivity analysis di Excel", "pic": null, "deadline": null, "flag": "UNKNOWN_PIC"}
+    ],
+    "decisions": ["Sensitivity analysis dengan 3 skenario (base, upside, downside) akan dibuat"],
+    "must_not_be_decision": ["Refinancing ke rate 8% (hanya opsi, belum diputuskan)"],
+    "open_issues": ["PIC model sensitivity belum ada", "Jadwal follow up auditor belum ada", "Kendala perizinan hotel Bali belum dicek"],
+    "risks": ["Bunga naik di atas 9% mengurangi penghematan", "Going concern issue dari auditor"]
+  }
+}

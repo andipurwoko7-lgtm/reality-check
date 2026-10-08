@@ -1,0 +1,10 @@
+{
+  "names":            ["Andi", "Budi", "Sari", "Mandiri", "BNI", "Bali"],
+  "abbreviations":    ["MTN", "CSPA", "DSCR", "EBITDA", "PIC"],
+  "finance_terms":    ["outstanding", "refinancing", "treasury", "trustee", "kupon", "seri A", "seri B", "covenant",
+                       "going concern", "divestasi", "cash flow", "negative pledge", "cross default", "term sheet",
+                       "tenor", "basis poin", "pre-sales", "valuasi", "emisi", "penghematan"],
+  "english_mixed":    ["rate", "review", "update", "draft", "follow up", "forward", "indicative pricing",
+                       "sensitivity analysis", "base case", "upside", "downside", "next step", "finalize", "forecast",
+                       "please make sure", "cross check", "issue", "finance"]
+}

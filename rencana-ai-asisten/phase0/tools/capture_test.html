@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 0 — Uji Perekaman Browser (disposable)</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --mut:#667; --line:#d8dde3; --ok:#1a7f37; --warn:#9a6700; --bad:#cf222e; --card:#f6f8fa; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1318; --fg:#e6eaf0; --mut:#9aa4b2; --line:#2a323c; --card:#171d24; --ok:#3fb950; --warn:#d29922; --bad:#f85149; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; margin:0 0 4px } h2 { font-size:16px; margin:24px 0 8px }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px; margin:8px 0 }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center }
+  button { padding:8px 14px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--fg); cursor:pointer; font:inherit }
+  button.primary { background:#0969da; color:#fff; border-color:#0969da } button:disabled { opacity:.5; cursor:default }
+  table { border-collapse:collapse; width:100% } td,th { border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; font-size:14px }
+  .bar { height:14px; background:var(--line); border-radius:7px; overflow:hidden } .bar > i { display:block; height:100%; width:0; background:var(--ok) }
+  .mut { color:var(--mut) } .ok { color:var(--ok) } .warn { color:var(--warn) } .bad { color:var(--bad) }
+  pre { white-space:pre-wrap; word-break:break-word; margin:0; font-size:12px } code { font-size:13px }
+  #log { max-height:180px; overflow:auto; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:8px }
+  select, input[type=number] { padding:4px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:4px }
+</style>
+</head>
+<body>
+<main>
+<h1>Phase 0 — Uji Perekaman Browser</h1>
+<p class="mut">Alat uji sekali pakai. Tidak mengunggah apa pun; semua diproses di browser ini. Rekaman yang diunduh berisi suara: simpan di folder <code>results/</code> (di-ignore git), jangan dibagikan.</p>
+
+<h2>0. Lingkungan</h2>
+<div class="card"><table id="env"></table></div>
+
+<h2>1. Pengaturan uji</h2>
+<div class="card">
+  <div class="row">
+    <label><input type="checkbox" id="useMic" checked> Mikrofon</label>
+    <label><input type="checkbox" id="useSys"> Audio sistem (bagikan layar/tab + centang “Bagikan audio”)</label>
+    <label>Mikrofon: <select id="micSel"><option value="">(default)</option></select></label>
+    <label>Durasi (detik): <input type="number" id="dur" value="30" min="10" max="3600" style="width:80px"></label>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <label title="Dimatikan = sinyal mentah, lebih baik untuk transkripsi"><input type="checkbox" id="fx"> Aktifkan echoCancellation/noiseSuppression/AGC browser pada mic</label>
+    <label>Label uji: <input id="label" value="" placeholder="mis. case6-headset" style="padding:4px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px"></label>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <button class="primary" id="btnRec">▶ Rekam uji</button>
+    <button id="btnTone">🔔 Uji nada (10 dtk, JANGAN bicara)</button>
+    <button id="btnStop" disabled>■ Berhenti</button>
+    <span id="timer" class="mut">00:00</span>
+  </div>
+  <p class="mut" style="margin:8px 0 0">Uji nada: 5 dtk hening (ukur noise), lalu 5 dtk nada 1 kHz lewat speaker/headset. Sistem harus naik jika audio sistem tertangkap; mic naik hanya jika terjadi <b>kebocoran</b> speaker→mic.</p>
+</div>
+<div class="card">
+  <div class="row"><span style="width:90px">Mic</span><div class="bar" style="flex:1"><i id="mMic"></i></div><span id="tMic" class="mut" style="width:80px">—</span></div>
+  <div class="row" style="margin-top:6px"><span style="width:90px">Sistem</span><div class="bar" style="flex:1"><i id="mSys"></i></div><span id="tSys" class="mut" style="width:80px">—</span></div>
+</div>
+
+<h2>2. Hasil uji terakhir</h2>
+<div class="card" id="result"><span class="mut">Belum ada.</span></div>
+
+<h2>3. Penilaian kasus (isi manual setelah uji)</h2>
+<div class="card"><table id="cases"></table>
+  <div class="row" style="margin-top:10px"><button id="btnExport">⬇ Unduh hasil (JSON, tanpa audio)</button></div></div>
+
+<h2>Log</h2>
+<div id="log"></div>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const runs = [];            // ringkasan tiap uji
+let ctx = null, S = null;   // S = sesi berjalan
+const CASES = [
+  ["CASE 1", "Browser menangkap mikrofon", "Centang Mikrofon saja → Rekam uji → bicara."],
+  ["CASE 2", "Browser menangkap audio sistem", "Centang Audio sistem saja → bagikan SELURUH LAYAR + audio → putar video/musik → Uji nada / Rekam."],
+  ["CASE 3", "Zoom Desktop berjalan, browser menangkap audio Zoom", "Rapat Zoom aktif; peserta lain (HP) berbicara; pilih seluruh layar + audio; cek level Sistem naik saat peserta bicara."],
+  ["CASE 4", "Zoom + headset", "Output Windows & Zoom = headset (kabel/Bluetooth). Ulangi CASE 3; jalankan Uji nada: mic TIDAK boleh naik."],
+  ["CASE 5", "Zoom + speaker laptop", "Output = speaker laptop. Jalankan Uji nada: catat apakah mic ikut naik (kebocoran) + rekam & evaluasi leak score."],
+  ["CASE 6", "Mic + audio sistem bersamaan", "Centang keduanya, rekam ≥5 menit saat Zoom; cek keduanya terisi tanpa celah chunk."],
+  ["CASE 7", "Mic & sistem tersimpan terpisah", "Unduh mic.webm dan system.webm; putar keduanya: mic hanya suaramu, sistem hanya peserta lain."],
+];
+
+function log(m, cls = "") { const d = document.createElement("div"); if (cls) d.className = cls; d.textContent = new Date().toLocaleTimeString() + "  " + m; $("log").prepend(d); }
+const dB = x => x > 1e-5 ? 20 * Math.log10(x) : -100;
+const fmtT = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+
+async function initEnv() {
+  const rows = [
+    ["User agent", navigator.userAgent],
+    ["Secure context", String(window.isSecureContext) + (window.isSecureContext ? "" : " — HARUS true (buka via http://localhost)")],
+    ["getUserMedia", String(!!navigator.mediaDevices?.getUserMedia)],
+    ["getDisplayMedia", String(!!navigator.mediaDevices?.getDisplayMedia)],
+    ["MediaRecorder", String(typeof MediaRecorder !== "undefined")],
+    ["Format rekam didukung", ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"].filter(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)).join(", ") || "—"],
+    ["Constraint didukung", JSON.stringify(Object.fromEntries(["echoCancellation", "noiseSuppression", "autoGainControl", "channelCount", "sampleRate"].map(k => [k, !!navigator.mediaDevices?.getSupportedConstraints?.()[k]])))],
+  ];
+  $("env").innerHTML = rows.map(r => `<tr><td class="mut">${r[0]}</td><td>${r[1]}</td></tr>`).join("");
+  try { // label perangkat baru terlihat setelah izin; isi daftar mic bila ada
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    devs.filter(d => d.kind === "audioinput").forEach(d => { const o = document.createElement("option"); o.value = d.deviceId; o.textContent = d.label || ("mic " + d.deviceId.slice(0, 6)); $("micSel").append(o); });
+  } catch (e) { log("enumerateDevices gagal: " + e.message, "warn"); }
+  $("cases").innerHTML = "<tr><th>Kasus</th><th>Cara uji</th><th>Hasil</th><th>Catatan</th></tr>" + CASES.map(c =>
+    `<tr><td><b>${c[0]}</b><br><span class="mut">${c[1]}</span></td><td class="mut">${c[2]}</td>
+     <td><select data-case="${c[0]}"><option>BELUM DIUJI</option><option>PASS</option><option>PARTIAL</option><option>FAIL</option></select></td>
+     <td><input data-note="${c[0]}" style="width:100%;padding:4px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px"></td></tr>`).join("");
+}
+
+async function acquire() {
+  const fx = $("fx").checked, out = { mic: null, sys: null, sysTrack: null, errors: [] };
+  if ($("useMic").checked) {
+    try {
+      const id = $("micSel").value;
+      out.mic = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: id ? { exact: id } : undefined, echoCancellation: fx, noiseSuppression: fx, autoGainControl: fx, channelCount: 1 } });
+      log("Mic OK: " + out.mic.getAudioTracks()[0].label, "ok");
+    } catch (e) { out.errors.push("mic: " + e.name + " " + e.message); log("Mic GAGAL: " + e.name + " " + e.message, "bad"); }
+  }
+  if ($("useSys").checked) {
+    try {
+      out.sys = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 1 }, audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, systemAudio: "include", selfBrowserSurface: "include" });
+      const at = out.sys.getAudioTracks();
+      if (!at.length) { out.errors.push("sistem: stream ada tapi TIDAK ada track audio (lupa centang 'Bagikan audio', memilih Window, atau OS/browser tidak mendukung)"); log("Sistem: TIDAK ada track audio", "bad"); }
+      else { out.sysTrack = at[0]; log("Sistem OK: " + at[0].label + " | surface=" + (out.sys.getVideoTracks()[0]?.getSettings().displaySurface || "?"), "ok"); }
+    } catch (e) { out.errors.push("sistem: " + e.name + " " + e.message); log("Sistem GAGAL: " + e.name + " " + e.message, "bad"); }
+  }
+  return out;
+}
+
+function buildGraph(a) {
+  ctx = ctx || new AudioContext();
+  const g = { an: {}, recs: {}, chunks: {}, stamps: {}, env: { mic: [], sys: [] } };
+  const mime = window.MediaRecorder && MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "";
+  const mk = (name, stream) => {
+    const r = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 64000 } : {});
+    g.chunks[name] = []; g.stamps[name] = [];
+    r.ondataavailable = e => { if (e.data.size) { g.chunks[name].push(e.data); g.stamps[name].push(performance.now()); } };
+    g.recs[name] = r; return r;
+  };
+  let micSrc = null, sysSrc = null;
+  if (a.mic) { micSrc = ctx.createMediaStreamSource(a.mic); g.an.mic = ctx.createAnalyser(); g.an.mic.fftSize = 4096; micSrc.connect(g.an.mic); mk("mic", new MediaStream(a.mic.getAudioTracks())); }
+  if (a.sysTrack) { sysSrc = ctx.createMediaStreamSource(new MediaStream([a.sysTrack])); g.an.sys = ctx.createAnalyser(); g.an.sys.fftSize = 4096; sysSrc.connect(g.an.sys); mk("system", new MediaStream([a.sysTrack])); }
+  if (micSrc && sysSrc) {
+    const mixDest = ctx.createMediaStreamDestination(); micSrc.connect(mixDest); sysSrc.connect(mixDest); mk("mixed", mixDest.stream);
+    const mg = ctx.createGain(), sg = ctx.createGain();
+    [mg, sg].forEach(n => { n.channelCount = 1; n.channelCountMode = "explicit"; n.channelInterpretation = "speakers"; });
+    micSrc.connect(mg); sysSrc.connect(sg);
+    const merger = ctx.createChannelMerger(2); mg.connect(merger, 0, 0); sg.connect(merger, 0, 1);
+    const st = ctx.createMediaStreamDestination(); st.channelCount = 2; st.channelCountMode = "explicit"; merger.connect(st); mk("stereo_L-mic_R-sys", st.stream);
+  }
+  return g;
+}
+
+const rmsOf = an => { const b = new Float32Array(an.fftSize); an.getFloatTimeDomainData(b); let s = 0; for (const v of b) s += v * v; return Math.sqrt(s / b.length); };
+function binDb(an, hz) { const f = new Float32Array(an.frequencyBinCount); an.getFloatFrequencyData(f); const k = Math.round(hz / (ctx.sampleRate / an.fftSize)); return Math.max(f[k - 1], f[k], f[k + 1]); }
+
+function startMeters(g, onTick) {
+  return setInterval(() => {
+    for (const k of ["mic", "sys"]) if (g.an[k]) {
+      const d = dB(rmsOf(g.an[k])); g.env[k].push(d);
+      $(k === "mic" ? "mMic" : "mSys").style.width = Math.max(0, Math.min(100, (d + 70) * 100 / 70)) + "%";
+      $(k === "mic" ? "tMic" : "tSys").textContent = d.toFixed(0) + " dBFS";
+    }
+    onTick && onTick();
+  }, 100);
+}
+
+const pearson = (a, b) => { const n = Math.min(a.length, b.length); if (n < 10) return null; let ma = 0, mb = 0; for (let i = 0; i < n; i++) { ma += a[i]; mb += b[i]; } ma /= n; mb /= n; let sab = 0, saa = 0, sbb = 0; for (let i = 0; i < n; i++) { const x = a[i] - ma, y = b[i] - mb; sab += x * y; saa += x * x; sbb += y * y; } return saa && sbb ? sab / Math.sqrt(saa * sbb) : null; };
+const stats = e => e.length ? { peak: Math.max(...e), mean: e.reduce((s, v) => s + v, 0) / e.length, silentPct: 100 * e.filter(v => v < -55).length / e.length } : null;
+
+async function record() {
+  if (S) return;
+  if (ctx) await ctx.resume();
+  ctx = ctx || new AudioContext(); await ctx.resume();
+  const a = await acquire();
+  if (!a.mic && !a.sysTrack) { log("Tidak ada sumber audio yang berhasil. Uji dibatalkan.", "bad"); render({ label: $("label").value, errors: a.errors, tracks: [], note: "tidak ada sumber" }); return; }
+  const g = buildGraph(a); const t0 = performance.now(); const dur = +$("dur").value;
+  S = { a, g, t0, dur, label: $("label").value || ("uji" + (runs.length + 1)) };
+  Object.values(g.recs).forEach(r => r.start(1000));
+  S.timer = startMeters(g, () => { const s = (performance.now() - t0) / 1000; $("timer").textContent = fmtT(s) + " / " + fmtT(dur); if (s >= dur) stop(); });
+  a.sys?.getVideoTracks()[0]?.addEventListener("ended", () => { log("Berbagi layar dihentikan oleh pengguna/OS", "warn"); stop(); });
+  a.sysTrack?.addEventListener("ended", () => { log("Track audio sistem BERAKHIR", "warn"); });
+  $("btnRec").disabled = $("btnTone").disabled = true; $("btnStop").disabled = false; log("Merekam " + dur + " dtk… (bicara / putar audio / minta peserta lain bicara)");
+}
+
+async function stop() {
+  if (!S) return; const s = S; S = null; clearInterval(s.timer);
+  const wall = (performance.now() - s.t0) / 1000;
+  await Promise.all(Object.values(s.g.recs).map(r => new Promise(res => { if (r.state === "inactive") return res(); r.onstop = res; r.stop(); })));
+  [s.a.mic, s.a.sys].forEach(st => st && st.getTracks().forEach(t => t.stop()));
+  const tracks = [];
+  for (const [name, chunks] of Object.entries(s.g.chunks)) {
+    const blob = new Blob(chunks, { type: chunks[0]?.type || "audio/webm" }), st = s.g.stamps[name];
+    let maxGap = 0; for (let i = 1; i < st.length; i++) maxGap = Math.max(maxGap, st[i] - st[i - 1]);
+    const level = name === "mic" ? stats(s.g.env.mic) : name === "system" ? stats(s.g.env.sys) : null;
+    tracks.push({ name, bytes: blob.size, mime: blob.type, chunks: chunks.length, maxChunkGapMs: Math.round(maxGap), level, url: URL.createObjectURL(blob), file: `${s.label}_${name}.webm` });
+  }
+  const corr = s.g.env.mic.length && s.g.env.sys.length ? pearson(s.g.env.mic, s.g.env.sys) : null;
+  const settings = {};
+  if (s.a.mic) settings.mic = s.a.mic.getAudioTracks()[0].getSettings();
+  if (s.a.sysTrack) settings.sys = s.a.sysTrack.getSettings();
+  render({ label: s.label, wallSec: +wall.toFixed(1), tracks, envCorrelation: corr, settings, errors: s.a.errors,
+           surface: s.a.sys?.getVideoTracks()[0]?.getSettings().displaySurface || null });
+  $("btnRec").disabled = $("btnTone").disabled = false; $("btnStop").disabled = true; $("timer").textContent = "00:00";
+}
+
+async function toneTest() {
+  if (S) return; await (ctx ? ctx.resume() : (ctx = new AudioContext()).resume());
+  const a = await acquire();
+  if (!a.mic && !a.sysTrack) { log("Tidak ada sumber. Batal.", "bad"); return; }
+  const g = buildGraph(a); $("btnRec").disabled = $("btnTone").disabled = true;
+  const acc = { base: { mic: [], sys: [] }, tone: { mic: [], sys: [] } }; let phase = "base";
+  const tick = startMeters(g, () => { for (const k of ["mic", "sys"]) if (g.an[k]) acc[phase][k].push(binDb(g.an[k], 1000)); });
+  log("Uji nada: hening 5 dtk… (jangan bicara)");
+  await new Promise(r => setTimeout(r, 5000));
+  const osc = ctx.createOscillator(), gain = ctx.createGain(); osc.frequency.value = 1000; gain.gain.value = 0.15; osc.connect(gain).connect(ctx.destination);
+  phase = "tone"; osc.start(); log("Nada 1 kHz 5 dtk…"); await new Promise(r => setTimeout(r, 5000)); osc.stop(); clearInterval(tick);
+  [a.mic, a.sys].forEach(st => st && st.getTracks().forEach(t => t.stop()));
+  const avg = x => x.length ? x.reduce((s, v) => s + v, 0) / x.length : null;
+  const res = { label: ($("label").value || "nada") + "_tone", type: "tone-test", errors: a.errors, surface: a.sys?.getVideoTracks()[0]?.getSettings().displaySurface || null };
+  for (const k of ["mic", "sys"]) if (g.an[k]) {
+    const b = avg(acc.base[k].slice(5)), t = avg(acc.tone[k].slice(5)); res[k] = { base1k_dB: +b.toFixed(1), tone1k_dB: +t.toFixed(1), delta_dB: +(t - b).toFixed(1) };
+  }
+  res.verdictSystem = !a.sysTrack ? "N/A (tidak ada track audio sistem)" : (res.sys.delta_dB > 15 ? "PASS — audio sistem tertangkap" : "FAIL — nada keluar tapi track sistem tidak naik");
+  res.verdictMicBleed = !a.mic ? "N/A" : (res.mic.delta_dB > 10 ? "BOCOR — speaker masuk mic (pemisahan mic/sistem TIDAK bersih)" : "bersih — mic tidak menangkap nada");
+  runs.push(res); $("result").innerHTML = `<pre>${JSON.stringify(res, null, 2)}</pre>`;
+  log("Nada: sistem=" + res.verdictSystem + " | mic=" + res.verdictMicBleed, res.verdictMicBleed.startsWith("BOCOR") ? "warn" : "ok");
+  $("btnRec").disabled = $("btnTone").disabled = false;
+}
+
+function render(r) {
+  runs.push({ ...r, tracks: r.tracks.map(t => ({ ...t, url: undefined })) });
+  const hint = [];
+  for (const t of r.tracks) if (t.level && t.level.peak < -50) hint.push(`<span class="bad">Track ${t.name} nyaris senyap (peak ${t.level.peak.toFixed(0)} dBFS) → kemungkinan tidak tertangkap</span>`);
+  for (const t of r.tracks) if (t.maxChunkGapMs > 2500) hint.push(`<span class="warn">Track ${t.name}: celah antar-chunk ${t.maxChunkGapMs} ms (browser throttling?)</span>`);
+  if (r.envCorrelation != null) hint.push(`Korelasi envelope mic↔sistem = <b>${r.envCorrelation.toFixed(2)}</b> <span class="mut">(tinggi saat hanya satu pihak bicara → indikasi kebocoran; interpretasi manual)</span>`);
+  $("result").innerHTML = `<div><b>${r.label}</b> — ${r.wallSec ?? "?"} dtk${r.surface ? " — surface: " + r.surface : ""}</div>
+  ${r.errors?.length ? `<div class="bad">${r.errors.join("<br>")}</div>` : ""}
+  <table><tr><th>Track</th><th>Ukuran</th><th>Chunk</th><th>Gap maks</th><th>Peak</th><th>Rata-rata</th><th>Senyap</th><th>Unduh</th></tr>${r.tracks.map(t =>
+    `<tr><td>${t.name}</td><td>${(t.bytes / 1024).toFixed(0)} KB</td><td>${t.chunks}</td><td>${t.maxChunkGapMs} ms</td>
+     <td>${t.level ? t.level.peak.toFixed(0) + " dB" : "—"}</td><td>${t.level ? t.level.mean.toFixed(0) + " dB" : "—"}</td><td>${t.level ? t.level.silentPct.toFixed(0) + "%" : "—"}</td>
+     <td><a href="${t.url}" download="${t.file}">${t.file}</a></td></tr>`).join("")}</table>
+  <div style="margin-top:8px">${hint.join("<br>")}</div><details><summary class="mut">Settings track</summary><pre>${JSON.stringify(r.settings || {}, null, 2)}</pre></details>`;
+  log("Selesai: " + r.label, "ok");
+}
+
+$("btnRec").onclick = () => record().catch(e => { log("ERROR " + e.message, "bad"); S = null; });
+$("btnStop").onclick = () => stop();
+$("btnTone").onclick = () => toneTest().catch(e => { log("ERROR " + e.message, "bad"); $("btnRec").disabled = $("btnTone").disabled = false; });
+$("btnExport").onclick = () => {
+  const cases = CASES.map(c => ({ case: c[0], title: c[1], result: document.querySelector(`[data-case="${c[0]}"]`).value, note: document.querySelector(`[data-note="${c[0]}"]`).value }));
+  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), userAgent: navigator.userAgent, cases, runs }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "capture_results.json"; a.click();
+};
+window.__test = { runs, record, stop, toneTest };  // dipakai smoke test otomatis
+initEnv();
+</script>
+</body>
+</html>

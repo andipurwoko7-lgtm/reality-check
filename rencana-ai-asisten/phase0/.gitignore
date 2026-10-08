@@ -1,0 +1,12 @@
+# Jangan pernah commit rekaman atau hasil uji mentah (privasi)
+results/*
+!results/.gitkeep
+*.wav
+*.webm
+*.mkv
+*.mp3
+*.m4a
+*.mp4
+*.flac
+*.ogg
+__pycache__/

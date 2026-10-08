@@ -1,6 +1,6 @@
 # RENCANA PEMBANGUNAN — AI Personal Assistant & Sekretaris Digital
 
-Status: **DRAFT UNTUK REVIEW** (belum ada kode, repository, instalasi, database, atau deployment)
+Status: **BASELINE DESIGN v1.1** — disetujui pemilik pada 8 Okt 2026 dengan catatan review. Lihat "Changelog v1.1" di akhir dokumen. Pembangunan aplikasi **belum dimulai**; hanya Phase 0 yang berjalan (lihat `PHASE0_REPORT.md`).
 Tanggal: 8 Oktober 2026
 Pemilik: Andi (Corporate Finance)
 
@@ -38,7 +38,7 @@ Itu yang paling menghemat waktu, tapi juga paling berisiko secara teknis dan pri
 1. **Kebijakan perusahaan.** Merekam rapat BUMN, lalu mengirim transkripnya ke layanan AI cloud dan menyimpannya di luar sistem kantor, bisa melanggar kebijakan IT/kerahasiaan. Ini harus dicek **sebelum** Phase 1. Kalau tidak boleh, desainnya berubah (full lokal, LLM lokal, kualitas turun).
 2. **Kalender kantor kamu Google atau Outlook?** Kantor BUMN umumnya pakai Microsoft 365. Kalau begitu, integrasi Google Calendar tidak melihat agenda kerja kamu sama sekali. Ini bisa mengubah prioritas integrasi.
 3. **MVP versi kamu terlalu besar** untuk dikerjakan paruh waktu. Saya potong jadi dua tahap rilis (MVP-A dan MVP-B).
-4. **Diarization (siapa yang bicara) di ruang rapat dengan satu mikrofon itu tidak akurat.** Jangan jadikan syarat. Saya sediakan jalan yang lebih andal untuk rapat Zoom.
+4. **Diarization (siapa yang bicara) di ruang rapat dengan satu mikrofon itu tidak akurat.** Jangan jadikan syarat. Untuk rapat Zoom, hipotesisnya: rekam mic dan audio sistem sebagai dua track terpisah. **Ini belum terbukti**; diuji di Phase 0.
 
 ---
 
@@ -118,7 +118,7 @@ AI salah tangkap PIC → kamu klik, ganti, simpan. Koreksi tercatat dan dipakai 
 
 Daftar MVP awalmu: Login, Dashboard, Agenda, Google Calendar, Meeting, Upload/rekam, Speech-to-text, Summary, Decision, Action Item, Task, Notes, AI Chat, Search.
 
-Itu **15 modul**. Kalau dikerjakan paruh waktu (10–12 jam/minggu), ini 6–8 bulan dan berisiko tidak selesai. Evaluasi:
+Itu **14 modul**. Kalau dikerjakan paruh waktu (10–12 jam/minggu), ini 6–8 bulan dan berisiko tidak selesai. Evaluasi:
 
 | Modul | Keputusan | Alasan |
 |---|---|---|
@@ -135,7 +135,7 @@ Itu **15 modul**. Kalau dikerjakan paruh waktu (10–12 jam/minggu), ini 6–8 b
 
 ### 5.2 Dua tahap rilis
 
-**MVP-A — "Rapat jadi Task"** (target minggu ke-14)
+**MVP-A — "Rapat jadi Task"** (target minggu ke-14 pada ±11–15 jam/minggu; pada 10 jam/minggu realistisnya minggu 16–21. Cakupan final MVP-A dipersempit di `PHASE0_REPORT.md` bagian 19)
 Login · Proyek · Catatan · Task · Rekam/upload rapat · Transkripsi lokal · Notulen + keputusan + action item · Review/Approve · Dashboard minimal.
 *Sudah berguna sendiri*: kamu bisa pakai di rapat nyata.
 
@@ -211,7 +211,7 @@ Frontend PWA ── HTTPS ──► Cloudflare Tunnel/Access ──► API (Fast
      │  rekam/transkrip lokal
      ▼
 ┌────────────────┐
-│ Local Worker   │  audio TIDAK diunggah pada mode "Sangat Sensitif"
+│ Local Worker   │  audio TIDAK diunggah pada Audio Route LOCAL_ONLY (§14.1)
 │ (laptop)       │
 └────────────────┘
 ```
@@ -234,12 +234,12 @@ Data           : Postgres (+pgvector, FTS) · File store terenkripsi
 
 | Skenario | Cara rekam | Catatan |
 |---|---|---|
-| Zoom/Teams/Meet di laptop | **Di PWA**: `getDisplayMedia` (bagikan layar penuh + centang "bagikan audio sistem") + mic lewat `getUserMedia`, disatukan | Chrome/Edge Windows mendukung audio sistem. Tanpa OBS. Mic dan audio sistem direkam sebagai **2 track terpisah** |
+| Zoom/Teams/Meet di laptop | **Di PWA**: `getDisplayMedia` (bagikan layar penuh + centang "bagikan audio sistem") + mic lewat `getUserMedia`, disatukan | **HIPOTESIS, belum diuji:** Chrome/Edge Windows seharusnya bisa menangkap audio sistem lewat berbagi layar + "bagikan audio", dan mic + sistem direkam sebagai 2 track. Syarat/keterbatasan yang diketahui: harus memilih layar penuh setiap sesi, audio yang tertangkap mengikuti output default Windows, Android tidak mendukung audio sistem. Diuji sebagai CASE 1–7 di Phase 0; OBS/recorder lokal adalah cadangan |
 | Cadangan Zoom | OBS merekam audio, lalu upload file | Jalur "jaring pengaman" |
 | Rapat offline | Mic HP atau laptop lewat PWA | Taruh HP di tengah meja |
 | Sudah ada file | Upload audio/video/transkrip | Format: mp3, m4a, wav, mp4, webm, mkv, txt, vtt, srt, docx |
 
-**Trik penting: dua track.** Mic = kamu. Audio sistem = peserta lain. Dengan ini "kamu vs orang lain" terpisah **tanpa diarization**. Itu jauh lebih andal daripada menebak suara.
+**Ide penting: dua track (hipotesis).** Mic = kamu. Audio sistem = peserta lain. Jika berhasil, "kamu vs orang lain" terpisah **tanpa diarization**. Syaratnya mic tidak menangkap suara peserta lain: dengan headset biasanya aman, dengan speaker laptop suara peserta **bocor ke mic** dan pemisahan rusak. Seberapa parah bocornya diukur di Phase 0 (CASE 4, 5, 7).
 
 ### 9.2 Meeting Session (state machine)
 
@@ -296,7 +296,8 @@ Audio (2 track bila ada)
   ↓ 3. Whisper (faster-whisper), bahasa=id, dengan initial_prompt berisi glosarium
   ↓ 4. Timestamp per segmen + confidence
   ↓ 5. Label pembicara:
-        • 2 track → "Saya" vs "Peserta lain" (andal)
+        • 2 track bersih → mic = USER (diberi nama pengguna, mis. "Andi"); sistem = PARTICIPANT
+          (peserta lain TIDAK diberi nama; hanya "Speaker 1/2" bila diarization, atau "Unknown Participant")
         • 1 track → diarization opsional (pyannote/WhisperX), label "Pembicara 1/2/3"
   ↓ 6. Pembersihan teks (bagian 10.4)
   ↓ 7. Simpan: teks mentah + teks bersih (keduanya, tidak saling menimpa)
@@ -304,7 +305,7 @@ Audio (2 track bila ada)
 
 ### 10.3 Diarization — ekspektasi realistis
 
-- Rapat Zoom dua track: cukup baik untuk "saya vs lainnya".
+- Rapat Zoom dua track: *diharapkan* cukup baik untuk "saya vs lainnya" jika kebocoran mic rendah (belum terbukti; Phase 0).
 - Rapat offline satu mikrofon, banyak orang, suara tumpang tindih: akurasi sedang. Jangan jadikan syarat kualitas.
 - Nama asli: **tidak ditebak dari suara**. Sistem mengusulkan nama dari daftar peserta undangan kalender, kamu yang memetakan "Pembicara 2 = Pak Budi" sekali per rapat. Pemetaan itu disimpan.
 
@@ -570,7 +571,14 @@ semua entitas ─* tags (via taggings), ─* attachments, ─* search_chunks, �
 
 ```
 1  Mulai Rapat      → buat meeting + recording session
-2  Rekam            → chunk 30s → IndexedDB → unggah (terenkripsi) → file temp server
+2  Rekam            → "Audio Route" menentukan jalurnya (v1.1, menutup inkonsistensi §11.2 vs alur ini):
+                       • LOCAL_ONLY (default untuk rapat laptop berlabel Sensitif/Sangat Sensitif):
+                         audio ditulis ke disk laptop oleh perekam lokal, ditranskripsi oleh Local Worker,
+                         dan HANYA teks yang dikirim ke server. Audio tidak pernah ke server.
+                       • SERVER_TEMP (rekaman HP, atau rapat berlabel Biasa): chunk 30s → IndexedDB →
+                         unggah terenkripsi → file temp server → ditarik Local Worker, lalu dihapus.
+                       Rekaman HP berlabel Sensitif hanya boleh SERVER_TEMP jika kebijakan kantor mengizinkan
+                       (keputusan terbuka D-04); jika tidak, pindahkan file ke laptop secara manual.
 3  Selesai          → job TRANSCRIBE
 4  Local Worker     → ambil audio → Whisper → kirim teks + segmen
 5  Server           → job CLEAN (aturan + glosarium + angka)
@@ -615,7 +623,7 @@ Tolak/kedaluwarsa (24 jam) → tidak ada yang terjadi
 
 | Data | Lokasi | Dikirim ke AI? | Retensi default |
 |---|---|---|---|
-| Audio rapat | Laptop (mode sangat sensitif) atau file temp terenkripsi di server | **Tidak** (kecuali STT cloud dipilih per rapat) | Hapus 7 hari setelah approve, atau langsung bila diatur |
+| Audio rapat | Laptop saja (Audio Route LOCAL_ONLY, default Sensitif/Sangat Sensitif) atau file temp terenkripsi di server (SERVER_TEMP: rekaman HP / rapat Biasa) | **Tidak** (kecuali STT cloud dipilih per rapat) | Hapus 7 hari setelah approve, atau langsung bila diatur |
 | Transkrip | Postgres (VPS) | Ya ke LLM jika sensitivitas mengizinkan | Sampai kamu hapus |
 | Ringkasan, keputusan, task, catatan | Postgres | Potongan relevan saat Tanya AI | Sampai dihapus |
 | Embedding | Postgres | Dibuat lokal, tidak keluar | Ikut sumbernya |
@@ -652,6 +660,8 @@ Kirim **potongan yang relevan**, bukan seluruh basis data. Nama file, label sens
 | Gmail | — | `gmail.readonly` + `gmail.compose` (hanya buat draft) | **`gmail.send`**. Sistem secara teknis tidak bisa mengirim email |
 
 Ini kontrol yang paling kuat: bukan sekadar aturan di prompt, tapi **izin yang memang tidak dimiliki**.
+
+> Bila kalender kantor Microsoft 365 (v1.1): padanan prinsipnya adalah Microsoft Graph dengan izin delegated `Calendars.Read` (tulis `Calendars.ReadWrite` baru nanti, dengan konfirmasi), dan tidak pernah `Mail.Send`. Banyak tenant BUMN membatasi persetujuan aplikasi (admin consent); itu bergantung kebijakan IT.
 
 > Catatan teknis: aplikasi OAuth Google berstatus "Testing" membuat refresh token kedaluwarsa sekitar 7 hari. Perlu strategi (mis. status "In production" tanpa verifikasi untuk pemakaian pribadi). Dicek di Phase 6.
 
@@ -822,7 +832,7 @@ Tidak ramai: maksimal 6 blok. Warna merah **hanya** untuk terlambat. Mode terang
 
 ## 20. Roadmap Development
 
-Asumsi: 10–12 jam/minggu, dibantu coding assistant. Toleransi estimasi ±40%.
+Asumsi: ±11–15 jam/minggu efektif, dibantu coding assistant (jadwal 29 minggu = 330–430 jam). Pada 10 jam/minggu, realistisnya 33–43 minggu. Toleransi estimasi ±40%.
 
 ```
 Minggu: 1  2 | 3  4 | 5 6 | 7 8 | 9 10 11 | 12 13 14 | 15 16 | 17 18 | 19 20 | 21–23 | 24–26 | 27–29
@@ -857,6 +867,8 @@ Minggu: 1  2 | 3  4 | 5 6 | 7 8 | 9 10 11 | 12 13 14 | 15 16 | 17 18 | 19 20 | 2
 ## 21. Phase-by-Phase Plan
 
 ### PHASE 0 — Discovery, Kepatuhan & Spike (2 minggu)
+
+> v1.1: eksekusi Phase 0 dirinci di `phase0/RUNBOOK.md`, hasilnya di `PHASE0_REPORT.md`. Semua kode di `phase0/` bersifat sekali pakai dan tidak menjadi kode produksi.
 
 - **Tujuan:** Memastikan ide boleh dan bisa dibangun, dan memilih teknologi dengan data, bukan perasaan.
 - **Scope:** Tidak ada aplikasi. Hanya keputusan, eksperimen, dan data uji.
@@ -1073,7 +1085,7 @@ Minggu: 1  2 | 3  4 | 5 6 | 7 8 | 9 10 11 | 12 13 14 | 15 16 | 17 18 | 19 20 | 2
 | Phase 3–5 (inti MVP-A) | 100–130 |
 | Phase 6–8 (MVP-B) | 70–90 |
 | Phase 9–11 | 100–130 |
-| **Total** | **±330–430 jam** (±29 minggu pada 10–12 jam/minggu) |
+| **Total** | **±330–430 jam** (±29 minggu pada ±11–15 jam/minggu; ±33–43 minggu pada 10 jam/minggu) |
 
 MVP-A saja ±160–210 jam.
 
@@ -1230,7 +1242,7 @@ Prinsip: **gagal dengan jelas, bukan diam-diam, dan tidak pernah mengarang.**
 | 2 | Kalender kerja kamu Google atau Outlook/M365? | Dianggap Google; jika Outlook, rencana Phase 6 berubah |
 | 3 | Spesifikasi laptop (RAM, CPU, ada GPU NVIDIA?) dan merek/versi HP Android | Tanpa GPU, 16 GB RAM |
 | 4 | Berapa jam rapat per minggu, berapa persen online vs offline? | 10 jam/minggu, 70% online |
-| 5 | Waktu yang realistis per minggu untuk proyek ini? | 10–12 jam |
+| 5 | Waktu yang realistis per minggu untuk proyek ini? | 10 jam (jadwal di §20 mengasumsikan 11–15 jam) |
 | 6 | Batas biaya bulanan yang nyaman? | ≤Rp1 juta |
 | 7 | Boleh pakai LLM cloud untuk transkrip rapat berlabel "Sensitif"? | Ya, jika #1 mengizinkan |
 | 8 | Setuju dengan dua rilis MVP (A lalu B)? | Ya |
@@ -1252,5 +1264,34 @@ Prinsip: **gagal dengan jelas, bukan diam-diam, dan tidak pernah mengarang.**
 
 ---
 
+## Changelog v1.1 — 8 Okt 2026 (approval sebagai BASELINE DESIGN + review konsistensi)
+
+Pemilik menyetujui dokumen ini sebagai baseline, dengan Phase 0 sebagai satu-satunya pekerjaan yang diizinkan. Perubahan dari v1.0:
+
+| # | Perubahan | Alasan |
+|---|---|---|
+| 1 | Status dokumen: draft → baseline v1.1 | Approval pemilik |
+| 2 | §5.1 "15 modul" → "14 modul" | Salah hitung: daftar MVP awal berisi 14 item |
+| 3 | §9.1, §9.1 "trik dua track", §10.2, §10.3: klaim "tanpa OBS", "Chrome/Edge mendukung", "jauh lebih andal", "(andal)" diubah menjadi **hipotesis belum terbukti** | Klaim itu belum pernah diuji. Speaker laptop membuat suara peserta bocor ke mic dan merusak pemisahan |
+| 4 | Label pembicara: mic = USER (diberi nama), sistem = PARTICIPANT / "Unknown Participant" / "Speaker N". Peserta lain tidak diberi nama tanpa diarization atau konfirmasi pengguna | Pemilik: jangan mengklaim bisa mengenali peserta |
+| 5 | §14.1 langkah 2 + §8.1 + §15.1: ditambah **Audio Route** (LOCAL_ONLY vs SERVER_TEMP) | Inkonsistensi: §11.2 menyebut "Sensitif = audio lokal", sedangkan §14.1 mengunggah semua audio ke server |
+| 6 | §20 dan §24.1: jadwal 29 minggu ternyata mengasumsikan ±11–15 jam/minggu, bukan 10–12. Pada 10 jam/minggu: 33–43 minggu; MVP-A minggu 16–21 | Aritmetika: 330–430 jam ÷ 10–12 jam/minggu ≠ 29 minggu |
+| 7 | §15.5: ditambah padanan Microsoft Graph | Kalender kantor mungkin M365 |
+| 8 | §21 Phase 0: ditambah penunjuk ke RUNBOOK dan REPORT | |
+
+Keputusan terbuka yang dicatat:
+
+| ID | Keputusan | Status |
+|---|---|---|
+| D-01 | Kebijakan kantor soal rekam, simpan, STT, LLM cloud (Policy Checklist) | UNKNOWN — butuh konfirmasi pemilik |
+| D-02 | Kalender utama: Google / Outlook / keduanya | UNKNOWN |
+| D-03 | Recorder PRIMARY (browser vs lokal) | Menunggu hasil uji di laptop; rekomendasi sementara di `PHASE0_REPORT.md` §9 |
+| D-04 | Rekaman HP berlabel Sensitif boleh lewat server sementara? | UNKNOWN (bergantung D-01) |
+| D-05 | Cakupan final MVP-A | Usulan di `PHASE0_REPORT.md` §19; menunggu approval |
+
+Bagian yang **sengaja tidak diubah** karena konsisten dengan arahan pemilik: pemisahan raw/clean transcript (§10.4, §13), AI hanya mengusulkan (§16), tanpa scope kirim email (§15.5), sumber wajib pada jawaban (§12.4), dan peta fase.
+
+---
+
 **STOP FOR REVIEW.**
-Belum ada kode, repository baru, instalasi, database, atau deployment yang dibuat. Dokumen ini hanya rencana.
+Belum ada kode produksi, instalasi, database, atau deployment. Yang ada hanya dokumen dan alat uji sekali pakai untuk Phase 0.
