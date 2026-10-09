@@ -31,7 +31,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$ScriptVersion = '1.0-stepA'
+$ScriptVersion = '1.1-stepA'
 
 $here = $PSScriptRoot
 if (-not $here) { $here = (Get-Location).Path }
@@ -205,7 +205,7 @@ Run-Section 'python' {
         $res.python_version_raw = $first
         $res.python_ok = ($first -match '^Python\s+\d+\.\d+')
         if ($res.python_ok) {
-            $bits = Invoke-Native 'python' @('-c', 'import struct;print(struct.calcsize("P")*8)')
+            $bits = Invoke-Native 'python' @('-c', 'import sys;print(64 if sys.maxsize>2**32 else 32)')
             $res.python_bits = ($bits | Select-Object -First 1)
             $pipv = Invoke-Native 'python' @('-m', 'pip', '--version')
             $pf = ($pipv | Select-Object -First 1)
@@ -256,17 +256,20 @@ Run-Section 'audio' {
                     if ($pf) { $form = [int]$pf.Value }
                 }
                 if ($desc -and $iface) { $name = "$desc ($iface)" } elseif ($desc) { $name = $desc } elseif ($iface) { $name = $iface } else { $name = '(nama tidak terbaca)' }
-                $ds = [int]$k.DeviceState
+                $rawState = [int64]$k.DeviceState
+                $ds = [int]($rawState -band 15)
                 $stateText = $stateNames[$ds]; if (-not $stateText) { $stateText = "code$ds" }
                 $formText = $null; if ($null -ne $form) { $formText = $formNames[$form] }
                 $script:AudioNames[$guid.ToLower()] = $name
-                $items += [ordered]@{ name = $name; state = $stateText; form_factor = $formText; bluetooth_handsfree_hint = [bool]($name -match 'Hands-?Free|HFP') }
+                $items += [ordered]@{ name = $name; state = $stateText; state_raw = ('0x{0:X}' -f $rawState); form_factor = $formText; bluetooth_handsfree_hint = [bool]($name -match 'Hands-?Free|HFP') }
             }
         } catch {
             $regOk = $false
             $out["${flow}_error"] = $_.Exception.Message
         }
-        $out[$flow.ToLower()] = $items
+        $visible = @($items | Where-Object { $_.state -ne 'notpresent' })
+        $out[$flow.ToLower()] = $visible
+        $out[$flow.ToLower() + '_notpresent_hidden'] = ($items.Count - $visible.Count)
     }
     # Cadangan bila registry tidak terbaca
     if (-not $regOk) {
@@ -274,7 +277,7 @@ Run-Section 'audio' {
     }
     # Stereo Mix (hanya dicatat; tidak dibutuhkan oleh WASAPI loopback / browser capture)
     $sm = @($out.capture | Where-Object { $_.name -match 'stereo\s*mix|stereo\s*mixer|what\s*u\s*hear|wave\s*out\s*mix|loopback' })
-    $out.stereo_mix = [ordered]@{ present = ($sm.Count -gt 0); entries = @($sm | ForEach-Object { [ordered]@{ name = $_.name; state = $_.state } }) }
+    $out.stereo_mix = [ordered]@{ present_not_ghost = ($sm.Count -gt 0); entries = @($sm | ForEach-Object { [ordered]@{ name = $_.name; state = $_.state; state_raw = $_.state_raw } }) }
     $out
 }
 
@@ -464,10 +467,12 @@ if ($d.disk) {
     Add-Line ('  drive folder skrip: ' + $d.disk.drive_of_this_script)
 }
 Add-Line '[Audio - output/playback]'
-if ($d.audio) { foreach ($x in $d.audio.render) { Add-Line ('  - ' + $x.name + ' | ' + $x.state + ' | ' + $x.form_factor + $(if ($x.bluetooth_handsfree_hint) { ' | HANDS-FREE?' } else { '' })) } }
+if ($d.audio) { foreach ($x in $d.audio.render) { Add-Line ('  - ' + $x.name + ' | ' + $x.state + ' (' + $x.state_raw + ') | ' + $x.form_factor + $(if ($x.bluetooth_handsfree_hint) { ' | HANDS-FREE?' } else { '' })) } }
+if ($d.audio) { Add-Line ('  (tidak ditampilkan: ' + $d.audio.render_notpresent_hidden + ' endpoint notpresent = bekas perangkat lama)') }
 Add-Line '[Audio - input/recording]'
-if ($d.audio) { foreach ($x in $d.audio.capture) { Add-Line ('  - ' + $x.name + ' | ' + $x.state + ' | ' + $x.form_factor + $(if ($x.bluetooth_handsfree_hint) { ' | HANDS-FREE?' } else { '' })) } }
-if ($d.audio -and $d.audio.stereo_mix) { Add-Line ('  Stereo Mix tersedia: ' + $d.audio.stereo_mix.present + ' ' + (($d.audio.stereo_mix.entries | ForEach-Object { $_.name + ' [' + $_.state + ']' }) -join '; ')) }
+if ($d.audio) { foreach ($x in $d.audio.capture) { Add-Line ('  - ' + $x.name + ' | ' + $x.state + ' (' + $x.state_raw + ') | ' + $x.form_factor + $(if ($x.bluetooth_handsfree_hint) { ' | HANDS-FREE?' } else { '' })) } }
+if ($d.audio) { Add-Line ('  (tidak ditampilkan: ' + $d.audio.capture_notpresent_hidden + ' endpoint notpresent)') }
+if ($d.audio -and $d.audio.stereo_mix) { Add-Line ('  Stereo Mix tersedia: ' + $d.audio.stereo_mix.present_not_ghost + ' ' + (($d.audio.stereo_mix.entries | ForEach-Object { $_.name + ' [' + $_.state + ' ' + $_.state_raw + ']' }) -join '; ')) }
 Add-Line '[Audio - default]'
 $dd = $null
 if ($d.audio_defaults_and_cpu_features) { $dd = $d.audio_defaults_and_cpu_features.default_devices }

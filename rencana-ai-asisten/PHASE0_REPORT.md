@@ -53,8 +53,22 @@ Sandbox ini adalah container cloud Linux tanpa GPU. Ia tidak punya Zoom, headset
 
 Benchmark di sandbox ini **tidak mewakili laptopmu** walaupun jaringan dibuka, jadi saya tidak menjadikannya sumber angka.
 
-### 2.2 Laptop & HP pengguna — `UNKNOWN`
-Isi tabel Langkah 0 di `phase0/RUNBOOK.md` (Windows, CPU, RAM, GPU, Chrome/Edge, Zoom, headset, HP). Spesifikasi ini menentukan model Whisper yang realistis.
+### 2.2 Laptop pengguna — Step A (9 Okt 2026), `VERIFIED` dari keluaran skrip
+| Item | Nilai |
+|---|---|
+| OS | Windows 11 Pro 25H2 (build 26200), 64-bit |
+| CPU | Intel Core Ultra 7 165U, 12 core / 14 thread; AVX ✓ AVX2 ✓ AVX512F ✗ |
+| RAM | 31,5 GB total (±10,7 GB bebas saat diukur) |
+| GPU | Intel Graphics (terintegrasi). **Tanpa NVIDIA/CUDA** → faster-whisper berjalan di CPU |
+| Disk | C: 244 GB bebas · D: 297 GB bebas |
+| Python | default 3.14.7; py launcher juga punya 3.13 dan 3.12; pip 26.2.1 |
+| ffmpeg | tidak ada di PATH |
+| Zoom / Chrome / Edge / OBS | Zoom Workplace 7.1.9 · Chrome 154 · Edge 154 · OBS tidak terpasang |
+| Audio default | output = Speakers (Realtek); mic = Microphone Array (Intel Smart Sound). Earbuds Bluetooth soundcore R50i NC terdaftar (tidak tersambung saat diukur). Stereo Mix terdaftar |
+| Power | plan Balanced, ada baterai, tersambung AC saat diukur |
+| Kebijakan | PowerShell FullLanguage (skrip & Add-Type tidak diblokir) |
+
+HP Android: belum dicatat. Catatan skrip: v1.0 punya dua cacat (kutip ganda argumen Python → traceback; DeviceState tidak di-mask) yang diperbaiki di v1.1; data di atas sudah dikoreksi secara manual.
 
 ---
 
