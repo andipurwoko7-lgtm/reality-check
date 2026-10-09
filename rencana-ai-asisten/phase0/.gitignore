@@ -1,6 +1,7 @@
 # Jangan pernah commit rekaman atau hasil uji mentah (privasi)
 results/*
 !results/.gitkeep
+!results/step_b/
 *.wav
 *.webm
 *.mkv

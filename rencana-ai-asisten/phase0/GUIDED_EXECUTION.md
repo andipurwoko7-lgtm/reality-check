@@ -31,8 +31,8 @@ Arti status: **PASS** = kriteria langkah terpenuhi. **PARTIAL** = jalan sebagian
 
 | Step | Nama | Isi | Instalasi? | Gate |
 |---|---|---|---|---|
-| **A** | System Inventory | Baca info perangkat (skrip PowerShell, hanya-baca) | Tidak | **SEDANG DISIAPKAN** |
-| B | Audio Capture Smoke Test | Bukti: MIC terekam · SYSTEM AUDIO terekam · MIC+SYSTEM bersamaan (audio non-Zoom). Halaman uji browser + skrip WASAPI (non-Zoom dulu) | Tidak/ringan | Belum disiapkan |
+| **A** | System Inventory | Baca info perangkat (skrip PowerShell, hanya-baca) | Tidak | **PASS. Gate A disetujui 9 Okt 2026** |
+| **B** | Audio Capture Smoke Test | Bukti: MIC terekam, SYSTEM AUDIO terekam, MIC+SYSTEM bersamaan (audio non-Zoom). Halaman uji browser `step_b.html`; WASAPI hanya cek dependensi | Tidak | **SIAP DIJALANKAN** (lihat bagian Step B) |
 | C | faster-whisper Environment | Python venv, pasang paket, uji unduh model langsung dari laptop | Ya (venv) | Belum disiapkan |
 | D | First Transcription | Satu file simulasi, model `small`, satu evaluasi | Tidak | Belum disiapkan |
 | E | Full CASE 1–7 | Zoom Desktop, headset, speaker laptop, pemisahan track | Tidak | Belum disiapkan |
@@ -88,13 +88,28 @@ Sebelum mengirim, buka file `.txt` dan pastikan tidak ada yang tidak ingin kamu 
 
 ---
 
-## Ketentuan untuk langkah berikutnya (belum disiapkan)
+## STEP B — Audio Capture Smoke Test (siap dijalankan)
 
-### Step B — Audio Capture Smoke Test
-- Tujuan minimal: buktikan **MIC** terekam, **SYSTEM AUDIO** terekam, dan **MIC+SYSTEM** terekam bersamaan. Sumber suara sistem: video/musik/nada uji non-Zoom.
-- Baru setelah lulus: Zoom Desktop, headset, speaker laptop (masuk Step E).
-- `record_dual_wasapi.py` **hanya cek sintaks**, belum terbukti. Diuji pertama kali pada audio non-Zoom. Jika gagal: catat error verbatim, tanpa workaround berlebihan.
-- Data hanya sintetis/simulasi.
+**Alat:** `phase0/tools/step_b.html` (satu halaman; dilayani server bawaan Python `http.server`, tanpa instalasi). Laporan: `phase0/STEP_B_REPORT.md`. Folder hasil: `phase0/results/step_b/` (audio di-ignore git; hanya metadata yang boleh masuk repo).
+
+**Kebijakan:** tanpa instalasi apa pun (bukan ffmpeg, OBS, faster-whisper, ctranslate2, PyAV, CUDA, driver, atau library lain). Audio simulasi saja. Tanpa Zoom. Tanpa Bluetooth. Tanpa headset berkabel.
+
+| Uji | Isi | PASS jika |
+|---|---|---|
+| B1 Mic | Mic default (Microphone Array Intel), baca kalimat simulasi ±25 dtk | File terbentuk, durasi benar (±3 dtk), peak ≥ −30 dBFS, clipping ≤ 1%, suara aktif ≥ 25% jendela, terdengar jelas (penilaian manual) |
+| B2 Sistem | Berbagi **seluruh layar** + audio sistem; nada 1 kHz dari halaman, lalu audio dari aplikasi lain | Track audio ada, nada tertangkap (≥ 15 dB di atas noise), surface = monitor, audio aplikasi lain tertangkap |
+| B3 Dual | Mic + sistem bersamaan, **dua file terpisah**; 4 fase: diam, nada (diam), bicara, bicara + nada | Kedua track terisi bersamaan, tanpa celah > 2,5 dtk, durasi benar. **Kualitas pemisahan dilaporkan terpisah** (GOOD ≤ 6 dB bocor, POOR ≥ 20 dB) |
+| WASAPI | `record_dual_wasapi.py` hanya dicek ketergantungannya (PyAudioWPatch) | Jika library tidak ada: **BLOCKED_BY_DEPENDENCY**, tidak dipaksa |
+
+**Gate B PASS minimal:** mic terekam + audio sistem terekam + keduanya bersamaan. Pemisahan track adalah target ideal; jika hanya mixed, maksimum PARTIAL. Jika audio sistem tidak terekam: FAIL/BLOCKED dan berhenti.
+
+**Terverifikasi (di sandbox, sinyal sintetis):** logika penilaian halaman diuji pada 8 skenario (bersih, speaker bocor, hanya tab, tanpa track audio, izin ditolak, mic senyap, clipping, suara mic masuk ke sistem). Semua vonis sesuai harapan. Ini membuktikan **alatnya**, bukan perangkatmu.
+
+> ## STOP FOR DEVICE REVIEW (Gate B)
+
+---
+
+## Ketentuan untuk langkah berikutnya (belum disiapkan)
 
 ### Step C — faster-whisper Environment
 - Pasang di venv terpisah, tanpa menyentuh Python sistem.

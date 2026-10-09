@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Step B — Smoke Test Perekaman (disposable)</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --mut:#667; --line:#d8dde3; --card:#f6f8fa; --ok:#1a7f37; --warn:#9a6700; --bad:#cf222e; --blue:#0969da; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1318; --fg:#e6eaf0; --mut:#9aa4b2; --line:#2a323c; --card:#171d24; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --blue:#4493f8; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,sans-serif; }
+  main { max-width:900px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; margin:0 0 4px } h2 { font-size:16px; margin:0 0 6px }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px; margin:12px 0 }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+  button { padding:8px 14px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--fg); cursor:pointer; font:inherit }
+  button.primary { background:var(--blue); color:#fff; border-color:var(--blue) } button:disabled { opacity:.45; cursor:default }
+  .mut { color:var(--mut) } .ok { color:var(--ok) } .warn { color:var(--warn) } .bad { color:var(--bad) }
+  .badge { display:inline-block; padding:1px 10px; border-radius:10px; font-weight:600; font-size:13px; border:1px solid var(--line) }
+  .PASS { color:var(--ok) } .PARTIAL { color:var(--warn) } .FAIL, .BLOCKED { color:var(--bad) }
+  .bar { height:14px; background:var(--line); border-radius:7px; overflow:hidden } .bar > i { display:block; height:100%; width:0; background:var(--ok) }
+  table { border-collapse:collapse; width:100% } td,th { border-bottom:1px solid var(--line); padding:4px 8px; text-align:left; font-size:13px; vertical-align:top }
+  #phaseTitle { font-size:20px; font-weight:700 } #phaseText { font-size:17px; margin:6px 0 } #phaseCount { font-size:28px; font-weight:700 }
+  textarea { width:100%; height:180px; font:12px/1.4 ui-monospace,monospace; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:6px }
+  #log { max-height:140px; overflow:auto; font-size:12px; border:1px solid var(--line); border-radius:6px; padding:6px; background:var(--bg) }
+  select, input[type=text] { padding:4px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:4px }
+  audio { height:32px; vertical-align:middle }
+</style>
+</head>
+<body>
+<main>
+<h1>Step B — Smoke Test Perekaman</h1>
+<p class="mut">Hanya audio simulasi. <b>Tidak ada yang diunggah</b>; semua dihitung di browser ini. Tutup aplikasi/jendela yang menampilkan hal pribadi sebelum berbagi layar. Atur volume speaker ke <b>±50%</b> dan jangan diubah selama uji.</p>
+<div class="card"><table id="env"></table></div>
+
+<div class="card">
+  <div id="phaseTitle" class="mut">Siap. Jalankan B1, B2, lalu B3.</div>
+  <div id="phaseText"></div><div id="phaseCount"></div>
+  <div class="row" style="margin-top:8px"><span style="width:60px">Mic</span><div class="bar" style="flex:1"><i id="mMic"></i></div><span id="tMic" class="mut" style="width:80px">—</span></div>
+  <div class="row" style="margin-top:6px"><span style="width:60px">Sistem</span><div class="bar" style="flex:1"><i id="mSys"></i></div><span id="tSys" class="mut" style="width:80px">—</span></div>
+</div>
+
+<div class="card"><h2>B1 — Mikrofon (±25 detik)</h2>
+  <p class="mut" style="margin:0 0 8px">Mic default Windows akan dipakai. Saat hitungan berjalan, baca dengan suara biasa kalimat yang tampil di layar.</p>
+  <div class="row"><button class="primary" id="btnB1">▶ Mulai B1</button><span id="stB1"></span>
+    <label>Terdengar jelas? <select id="heardB1"><option value="">(belum dinilai)</option><option value="ya">Ya</option><option value="sebagian">Sebagian</option><option value="tidak">Tidak</option></select></label></div>
+  <div id="resB1"></div></div>
+
+<div class="card"><h2>B2 — Audio sistem (±18 detik)</h2>
+  <p class="mut" style="margin:0 0 8px">Chrome akan membuka pemilih layar: pilih tab <b>Seluruh layar (Entire screen)</b>, klik layar, <b>centang “Bagikan audio sistem”</b>, lalu Share. <b>Siapkan dulu</b> video/lagu apa saja di jendela lain (dalam keadaan pause) untuk fase 3.</p>
+  <div class="row"><button class="primary" id="btnB2">▶ Mulai B2</button><span id="stB2"></span>
+    <label>Terdengar jelas? <select id="heardB2"><option value="">(belum dinilai)</option><option value="ya">Ya</option><option value="sebagian">Sebagian</option><option value="tidak">Tidak</option></select></label></div>
+  <div id="resB2"></div></div>
+
+<div class="card"><h2>B3 — Mic + audio sistem bersamaan (±31 detik)</h2>
+  <p class="mut" style="margin:0 0 8px">Pilih lagi <b>Seluruh layar + bagikan audio sistem</b>. Ikuti instruksi tiap fase di kotak atas: diam → nada (jangan bicara) → bicara tanpa nada → bicara sambil nada.</p>
+  <div class="row"><button class="primary" id="btnB3">▶ Mulai B3</button><span id="stB3"></span>
+    <label>Kedua file terdengar benar? <select id="heardB3"><option value="">(belum dinilai)</option><option value="ya">Ya</option><option value="sebagian">Sebagian</option><option value="tidak">Tidak</option></select></label></div>
+  <div id="resB3"></div></div>
+
+<div class="card"><h2>Ringkasan &amp; hasil untuk dikirim</h2>
+  <div id="summary" class="mut">Belum ada hasil.</div>
+  <p style="margin:8px 0 4px">Catatan Anda (opsional): <input type="text" id="notes" style="width:70%" placeholder="mis. volume speaker 50%, Chrome 154"></p>
+  <div class="row"><button id="btnJson">Perbarui &amp; tampilkan JSON</button><button id="btnCopy">Salin JSON</button><button id="btnDl">⬇ Unduh JSON</button></div>
+  <textarea id="out" readonly placeholder="JSON hasil muncul di sini (tanpa audio)"></textarea>
+  <p class="mut" style="margin:6px 0 0">Kirim isi JSON ini (teks). File audio yang Anda unduh <b>jangan dikirim</b>; simpan di <code>results\step_b\</code>.</p></div>
+
+<div id="log"></div>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const FAST = /[?&]fast/.test(location.search);           // hanya untuk tes otomatis
+const S = x => FAST ? Math.max(2.5, x * 0.4) : x;
+const CFG = { toneHz: 1000, margin: FAST ? 0.4 : 0.7, b1: S(25),
+  b2: { floor: S(4), tone: S(6), ext: S(12) }, b3: { floor: S(5), tone: S(8), voice: S(10), both: S(8) } };
+const SENT = "Ini adalah pengujian microphone untuk AI Assistant. Nilai outstanding sebesar empat ratus sembilan puluh lima miliar rupiah. Deadline pekerjaan adalah tanggal dua belas Oktober.";
+const R = { page: "step_b v1", B1: null, B2: null, B3: null, wasapi: { status: "NOT_RUN", note: "diuji lewat PowerShell, lihat instruksi" } };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const db = x => x > 1e-6 ? 20 * Math.log10(x) : -120;
+const r1 = x => Math.round(x * 10) / 10;
+let ctx = null, osc = null, toneGain = null;
+const urls = [];
+
+function log(m, c = "") { const d = document.createElement("div"); if (c) d.className = c; d.textContent = new Date().toLocaleTimeString() + "  " + m; $("log").prepend(d); }
+
+function initEnv() {
+  const md = navigator.mediaDevices;
+  const rows = [["Browser", navigator.userAgent], ["Secure context", String(window.isSecureContext)],
+    ["getUserMedia", String(!!(md && md.getUserMedia))], ["getDisplayMedia", String(!!(md && md.getDisplayMedia))],
+    ["MediaRecorder opus/webm", String(typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))]];
+  $("env").innerHTML = rows.map(r => `<tr><td class="mut">${r[0]}</td><td>${r[1]}</td></tr>`).join("");
+  if (!window.isSecureContext) log("Halaman harus dibuka lewat http://localhost:8765/ (bukan file://).", "bad");
+}
+
+async function ensureCtx() {
+  if (!ctx) ctx = new AudioContext();
+  if (ctx.state !== "running") await ctx.resume();
+  if (!osc) { osc = ctx.createOscillator(); osc.frequency.value = CFG.toneHz; toneGain = ctx.createGain(); toneGain.gain.value = 0; osc.connect(toneGain).connect(ctx.destination); osc.start(); }
+}
+function tone(on) { toneGain.gain.setTargetAtTime(on ? 0.25 : 0, ctx.currentTime, 0.01); if (window.__onTone) window.__onTone(on); }
+
+async function acquireSys() {
+  const md = navigator.mediaDevices;
+  if (!md || !md.getDisplayMedia) return { error: "getDisplayMedia tidak tersedia di browser ini", status: "BLOCKED" };
+  try {
+    const st = await md.getDisplayMedia({ video: { frameRate: 1 }, audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, systemAudio: "include", selfBrowserSurface: "include" });
+    const v = st.getVideoTracks()[0], a = st.getAudioTracks()[0] || null;
+    const s = a ? Object.assign({}, a.getSettings()) : null; if (s) { delete s.deviceId; delete s.groupId; }
+    return { stream: st, track: a, surface: v ? (v.getSettings().displaySurface || null) : null, settings: s };
+  } catch (e) { return { error: e.name + ": " + e.message, status: (e.name === "NotAllowedError" || e.name === "NotSupportedError") ? "BLOCKED" : "FAIL" }; }
+}
+async function acquireMic() {
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    const t = st.getAudioTracks()[0], s = Object.assign({}, t.getSettings()); delete s.deviceId; delete s.groupId;
+    return { stream: st, track: t, label: t.label, settings: s };
+  } catch (e) { return { error: e.name + ": " + e.message, status: e.name === "NotAllowedError" ? "BLOCKED" : "FAIL" }; }
+}
+
+function newRec(track) {
+  const o = { chunks: [], stamps: [] };
+  o.mime = (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) ? "audio/webm;codecs=opus" : "";
+  o.rec = new MediaRecorder(new MediaStream([track]), o.mime ? { mimeType: o.mime } : {});
+  o.rec.ondataavailable = e => { if (e.data.size) { o.chunks.push(e.data); o.stamps.push(performance.now()); } };
+  o.stopped = new Promise(r => { o.rec.onstop = r; });
+  return o;
+}
+async function finish(o) {
+  if (o.rec.state !== "inactive") o.rec.stop();
+  await o.stopped;
+  o.blob = new Blob(o.chunks, { type: (o.chunks[0] && o.chunks[0].type) || "audio/webm" });
+  let gap = 0; for (let i = 1; i < o.stamps.length; i++) gap = Math.max(gap, o.stamps[i] - o.stamps[i - 1]);
+  o.maxGapMs = Math.round(gap); return o;
+}
+function meter(stream, barId, txtId) {
+  const src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 2048; src.connect(an);
+  const buf = new Float32Array(an.fftSize);
+  const id = setInterval(() => { an.getFloatTimeDomainData(buf); let s = 0; for (const v of buf) s += v * v; const d = db(Math.sqrt(s / buf.length));
+    $(barId).style.width = Math.max(0, Math.min(100, (d + 70) * 100 / 70)) + "%"; $(txtId).textContent = d.toFixed(0) + " dBFS"; }, 100);
+  return () => { clearInterval(id); try { src.disconnect(); } catch (e) {} $(barId).style.width = "0"; $(txtId).textContent = "—"; };
+}
+
+async function decode(blob) {
+  const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+  const n = buf.length, ch = buf.numberOfChannels, mono = new Float32Array(n);
+  for (let c = 0; c < ch; c++) { const d = buf.getChannelData(c); for (let i = 0; i < n; i++) mono[i] += d[i] / ch; }
+  return { x: mono, sr: buf.sampleRate, ch, dur: buf.duration };
+}
+const seg = (d, a, b) => d.x.subarray(Math.max(0, Math.floor(a * d.sr)), Math.min(d.x.length, Math.floor(b * d.sr)));
+function rmsDb(x) { let s = 0; for (let i = 0; i < x.length; i++) s += x[i] * x[i]; return db(Math.sqrt(s / Math.max(1, x.length))); }
+function peakDb(x) { let p = 0; for (let i = 0; i < x.length; i++) { const a = Math.abs(x[i]); if (a > p) p = a; } return db(p); }
+function clipPct(x) { let c = 0; for (let i = 0; i < x.length; i++) if (Math.abs(x[i]) >= 0.999) c++; return 100 * c / Math.max(1, x.length); }
+function activeFrac(x, sr, thr = -45) { const w = Math.floor(sr * 0.05); let a = 0, n = 0; for (let i = 0; i + w <= x.length; i += w) { n++; if (rmsDb(x.subarray(i, i + w)) > thr) a++; } return n ? a / n : 0; }
+function goertzelDb(x, sr, hz) {
+  const N = x.length; if (N < 64) return -120; const k = 2 * Math.PI * hz / sr, c = 2 * Math.cos(k); let s1 = 0, s2 = 0;
+  for (let i = 0; i < N; i++) { const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1)); const s = x[i] * w + c * s1 - s2; s2 = s1; s1 = s; }
+  const re = s1 - s2 * Math.cos(k), im = s2 * Math.sin(k); return db(4 * Math.sqrt(re * re + im * im) / N);
+}
+
+async function runPhases(list) {
+  const t0 = performance.now(), marks = {};
+  for (const p of list) {
+    $("phaseTitle").textContent = p.title; $("phaseTitle").className = ""; $("phaseText").textContent = p.text || "";
+    if (window.__onPhase) window.__onPhase(p.name); tone(!!p.tone);
+    const s = performance.now(), end = s + p.sec * 1000;
+    while (performance.now() < end) { $("phaseCount").textContent = Math.ceil((end - performance.now()) / 1000) + " dtk"; await sleep(100); }
+    marks[p.name] = [(s - t0) / 1000, (performance.now() - t0) / 1000];
+  }
+  tone(false); if (window.__onPhase) window.__onPhase("end"); $("phaseCount").textContent = "";
+  return marks;
+}
+const win = (marks, n) => [marks[n][0] + CFG.margin, marks[n][1] - CFG.margin];
+
+function lock(b) { ["btnB1", "btnB2", "btnB3"].forEach(i => $(i).disabled = b); }
+function addUrl(blob) { const u = URL.createObjectURL(blob); urls.push(u); return u; }
+function badge(s) { return `<span class="badge ${s}">${s}</span>`; }
+function table(rows) { return "<table>" + rows.map(r => `<tr><td class="mut" style="width:42%">${r[0]}</td><td>${r[1]}</td></tr>`).join("") + "</table>"; }
+function media(label, fname, blob) { const u = addUrl(blob); return `<div style="margin:4px 0">${label}: <audio controls src="${u}"></audio> <a href="${u}" download="${fname}">⬇ ${fname}</a></div>`; }
+function adjust(status, heard) { if (heard === "tidak") return "FAIL"; if (heard === "sebagian" && status === "PASS") return "PARTIAL"; return status; }
+
+// ------------------------------------------------------------------ B1
+async function runB1() {
+  lock(true); R.B1 = null; $("resB1").innerHTML = "";
+  try {
+    await ensureCtx(); const m = await acquireMic();
+    if (m.error) { R.B1 = { status: m.status || "FAIL", error: m.error }; log("B1: " + m.error, "bad"); return; }
+    const stop = meter(m.stream, "mMic", "tMic"), rec = newRec(m.track); rec.rec.start(1000);
+    await runPhases([{ name: "b1", title: "B1 — BACA dengan suara biasa:", text: SENT, sec: CFG.b1 }]);
+    await finish(rec); stop(); m.stream.getTracks().forEach(t => t.stop());
+    const d = await decode(rec.blob), x = d.x;
+    const met = { bytes: rec.blob.size, mime: rec.mime, durationSec: r1(d.dur), requestedSec: r1(CFG.b1), decodedSampleRate: d.sr, decodedChannels: d.ch,
+      trackSettings: m.settings, micLabel: m.label, peakDbfs: r1(peakDb(x)), rmsDbfs: r1(rmsDb(x)), clippingPct: Math.round(clipPct(x) * 1000) / 1000,
+      activeFraction: Math.round(activeFrac(x, d.sr) * 100) / 100, maxChunkGapMs: rec.maxGapMs };
+    let st = "PASS";
+    if (!met.bytes || met.peakDbfs < -50 || Math.abs(met.durationSec - met.requestedSec) > 6) st = "FAIL";
+    else if (met.peakDbfs < -30 || met.clippingPct > 1 || met.activeFraction < 0.25 || Math.abs(met.durationSec - met.requestedSec) > 3) st = "PARTIAL";
+    R.B1 = { autoStatus: st, status: st, metrics: met, audioHtml: media("Putar rekaman", "step_b_B1_mic.webm", rec.blob) };
+  } catch (e) { R.B1 = { status: "FAIL", error: e.name + ": " + e.message }; log("B1 error: " + e.message, "bad"); }
+  finally { lock(false); renderAll(); }
+}
+
+// ------------------------------------------------------------------ B2
+async function runB2() {
+  lock(true); R.B2 = null; $("resB2").innerHTML = "";
+  try {
+    await ensureCtx(); const s = await acquireSys();
+    if (s.error) { R.B2 = { status: s.status || "FAIL", error: s.error }; log("B2: " + s.error, "bad"); return; }
+    if (!s.track) { s.stream.getTracks().forEach(t => t.stop()); R.B2 = { status: "FAIL", surface: s.surface, error: "Stream ada tetapi TIDAK ada track audio (centang 'bagikan audio sistem' terlewat, atau memilih Window)" }; return; }
+    const stop = meter(new MediaStream([s.track]), "mSys", "tSys"), rec = newRec(s.track); rec.rec.start(1000);
+    const marks = await runPhases([
+      { name: "floor", title: "B2 — DIAM. Jangan putar apa pun.", sec: CFG.b2.floor },
+      { name: "tone", title: "B2 — Nada akan terdengar dari speaker. Tetap diam.", tone: true, sec: CFG.b2.tone },
+      { name: "ext", title: "B2 — SEKARANG putar video/lagu di jendela lain (volume sedang).", text: "Klik jendela video yang sudah disiapkan lalu tekan Play.", sec: CFG.b2.ext }]);
+    await finish(rec); stop(); s.stream.getTracks().forEach(t => t.stop());
+    const d = await decode(rec.blob), W = n => seg(d, ...win(marks, n));
+    const floor1k = goertzelDb(W("floor"), d.sr, CFG.toneHz), tone1k = goertzelDb(W("tone"), d.sr, CFG.toneHz);
+    const rmsFloor = rmsDb(W("floor")), rmsExt = rmsDb(W("ext"));
+    const met = { bytes: rec.blob.size, mime: rec.mime, durationSec: r1(d.dur), decodedSampleRate: d.sr, decodedChannels: d.ch, trackSettings: s.settings, displaySurface: s.surface,
+      tone1kHz_floor_dB: r1(floor1k), tone1kHz_tonePhase_dB: r1(tone1k), toneDelta_dB: r1(tone1k - floor1k),
+      rms_floor_dB: r1(rmsFloor), rms_externalPhase_dB: r1(rmsExt), externalDelta_dB: r1(rmsExt - rmsFloor), peakDbfs: r1(peakDb(d.x)), maxChunkGapMs: rec.maxGapMs };
+    const toneOk = met.toneDelta_dB >= 15, extOk = met.externalDelta_dB >= 15, surfOk = s.surface === "monitor";
+    let st = "PASS", why = [];
+    if (!met.bytes || !toneOk) { st = "FAIL"; why.push("nada dari speaker TIDAK tertangkap di track sistem"); }
+    else { if (!surfOk) { st = "PARTIAL"; why.push("surface=" + s.surface + " (bukan seluruh layar): audio aplikasi lain tidak dijamin"); }
+           if (!extOk) { st = "PARTIAL"; why.push("audio dari aplikasi lain tidak terdeteksi (tidak diputar, atau hanya tab yang dibagikan)"); } }
+    R.B2 = { autoStatus: st, status: st, reasons: why, metrics: met, audioHtml: media("Putar rekaman sistem", "step_b_B2_system.webm", rec.blob) };
+  } catch (e) { R.B2 = { status: "FAIL", error: e.name + ": " + e.message }; log("B2 error: " + e.message, "bad"); }
+  finally { lock(false); renderAll(); }
+}
+
+// ------------------------------------------------------------------ B3
+async function runB3() {
+  lock(true); R.B3 = null; $("resB3").innerHTML = "";
+  try {
+    await ensureCtx();
+    const s = await acquireSys();                       // dulu: butuh user activation
+    if (s.error) { R.B3 = { status: s.status || "FAIL", error: s.error }; log("B3: " + s.error, "bad"); return; }
+    if (!s.track) { s.stream.getTracks().forEach(t => t.stop()); R.B3 = { status: "FAIL", surface: s.surface, error: "Tidak ada track audio sistem" }; return; }
+    const m = await acquireMic();
+    if (m.error) { s.stream.getTracks().forEach(t => t.stop()); R.B3 = { status: m.status || "FAIL", error: m.error }; log("B3: " + m.error, "bad"); return; }
+    const stopM = meter(m.stream, "mMic", "tMic"), stopS = meter(new MediaStream([s.track]), "mSys", "tSys");
+    const rs = newRec(s.track), rm = newRec(m.track); rs.rec.start(1000); rm.rec.start(1000);
+    const marks = await runPhases([
+      { name: "floor", title: "B3 — DIAM (mengukur noise).", sec: CFG.b3.floor },
+      { name: "tone", title: "B3 — Nada terdengar. JANGAN bicara.", tone: true, sec: CFG.b3.tone },
+      { name: "voice", title: "B3 — BACA dengan suara biasa:", text: SENT, sec: CFG.b3.voice },
+      { name: "both", title: "B3 — BACA lagi SAMBIL nada terdengar:", text: SENT, tone: true, sec: CFG.b3.both }]);
+    await Promise.all([finish(rs), finish(rm)]); stopM(); stopS(); [m.stream, s.stream].forEach(st => st.getTracks().forEach(t => t.stop()));
+    const dm = await decode(rm.blob), ds = await decode(rs.blob), M = n => seg(dm, ...win(marks, n)), Sy = n => seg(ds, ...win(marks, n));
+    const f = CFG.toneHz, total = CFG.b3.floor + CFG.b3.tone + CFG.b3.voice + CFG.b3.both;
+    const mic = { bytes: rm.blob.size, durationSec: r1(dm.dur), decodedSampleRate: dm.sr, micLabel: m.label, trackSettings: m.settings, maxChunkGapMs: rm.maxGapMs,
+      tone1kHz_floor_dB: r1(goertzelDb(M("floor"), dm.sr, f)), tone1kHz_tonePhase_dB: r1(goertzelDb(M("tone"), dm.sr, f)),
+      rms_floor_dB: r1(rmsDb(M("floor"))), rms_voice_dB: r1(rmsDb(M("voice"))), activeFraction_voice: Math.round(activeFrac(M("voice"), dm.sr) * 100) / 100,
+      activeFraction_both: Math.round(activeFrac(M("both"), dm.sr) * 100) / 100, peakDbfs: r1(peakDb(dm.x)), clippingPct: Math.round(clipPct(dm.x) * 1000) / 1000 };
+    const sys = { bytes: rs.blob.size, durationSec: r1(ds.dur), decodedSampleRate: ds.sr, displaySurface: s.surface, trackSettings: s.settings, maxChunkGapMs: rs.maxGapMs,
+      tone1kHz_floor_dB: r1(goertzelDb(Sy("floor"), ds.sr, f)), tone1kHz_tonePhase_dB: r1(goertzelDb(Sy("tone"), ds.sr, f)), tone1kHz_bothPhase_dB: r1(goertzelDb(Sy("both"), ds.sr, f)),
+      rms_floor_dB: r1(rmsDb(Sy("floor"))), rms_voicePhase_dB: r1(rmsDb(Sy("voice"))) };
+    const der = { sysToneDelta_dB: r1(sys.tone1kHz_tonePhase_dB - sys.tone1kHz_floor_dB), micBleed_dB: r1(mic.tone1kHz_tonePhase_dB - mic.tone1kHz_floor_dB),
+      isolation_sysTone_minus_micTone_dB: r1(sys.tone1kHz_tonePhase_dB - mic.tone1kHz_tonePhase_dB), micIntoSystemLeak_dB: r1(sys.rms_voicePhase_dB - sys.rms_floor_dB) };
+    const sysTone = der.sysToneDelta_dB >= 15, micVoice = mic.activeFraction_voice >= 0.25 && mic.peakDbfs >= -40;
+    const files = mic.bytes > 0 && sys.bytes > 0, gaps = Math.max(mic.maxChunkGapMs, sys.maxChunkGapMs) <= 2500;
+    const dur = Math.abs(mic.durationSec - total) <= 3 && Math.abs(sys.durationSec - total) <= 3;
+    let cap = "PASS", why = [];
+    if (!files || !sysTone || mic.peakDbfs < -50) { cap = "FAIL"; if (!sysTone) why.push("nada tidak tertangkap di track sistem"); if (mic.peakDbfs < -50) why.push("mic nyaris senyap"); if (!files) why.push("salah satu file kosong"); }
+    else { if (!micVoice) { cap = "PARTIAL"; why.push("suara di mic lemah / sedikit"); } if (!gaps) { cap = "PARTIAL"; why.push("ada celah chunk > 2,5 dtk"); } if (!dur) { cap = "PARTIAL"; why.push("durasi file menyimpang > 3 dtk"); } }
+    let sep = "WEAK";
+    if (der.micBleed_dB <= 6 && der.micIntoSystemLeak_dB <= 3) sep = "GOOD"; else if (der.micBleed_dB >= 20 || der.micIntoSystemLeak_dB >= 10) sep = "POOR";
+    if (cap === "FAIL") sep = "N/A";   // pemisahan tidak bermakna bila capture gagal
+    R.B3 = { autoStatus: cap, status: cap, captureSimultaneous: cap, separationQuality: sep, separateFiles: true, reasons: why, mic, system: sys, derived: der,
+      audioHtml: media("Mic", "step_b_B3_mic.webm", rm.blob) + media("Sistem", "step_b_B3_system.webm", rs.blob) };
+  } catch (e) { R.B3 = { status: "FAIL", error: e.name + ": " + e.message }; log("B3 error: " + e.message, "bad"); }
+  finally { lock(false); renderAll(); }
+}
+
+// ------------------------------------------------------------------ tampilan & ekspor
+function renderOne(id, heardId) {
+  const x = R[id]; if (!x) return;
+  x.manual = $(heardId).value || null; x.status = adjust(x.autoStatus || x.status, x.manual);
+  $("st" + id).innerHTML = badge(x.status);
+  let h = "";
+  if (x.error) h += `<p class="bad">ERROR: ${x.error}</p>`;
+  if (x.reasons && x.reasons.length) h += `<p class="warn">Catatan: ${x.reasons.join("; ")}</p>`;
+  if (id === "B3" && x.derived) h += table([["Capture bersamaan", badge(x.captureSimultaneous)], ["Kualitas pemisahan", `<b>${x.separationQuality}</b> (GOOD ≤6 dB bocor · POOR ≥20 dB)`],
+    ["Mic menangkap nada speaker (bleed)", x.derived.micBleed_dB + " dB di atas noise"], ["Nada sistem − nada di mic", x.derived.isolation_sysTone_minus_micTone_dB + " dB"],
+    ["Suara mic masuk ke track sistem", x.derived.micIntoSystemLeak_dB + " dB"], ["Track sistem menangkap nada", x.derived.sysToneDelta_dB + " dB"],
+    ["Celah chunk maks (mic/sistem)", x.mic.maxChunkGapMs + " / " + x.system.maxChunkGapMs + " ms"]]);
+  else if (x.metrics) { const mt = x.metrics; h += table(Object.keys(mt).filter(k => typeof mt[k] !== "object").map(k => [k, String(mt[k])])); }
+  if (x.audioHtml) h += x.audioHtml;
+  $("res" + id).innerHTML = h;
+}
+function gate() {
+  const s = ["B1", "B2", "B3"].map(k => R[k] ? R[k].status : "NOT_RUN");
+  if (s.includes("NOT_RUN")) return "BELUM LENGKAP";
+  if (R.B2.status === "BLOCKED" || R.B2.status === "FAIL") return R.B2.status + " (system audio tidak terekam)";
+  if (s.every(v => v === "PASS")) return "PASS";
+  if (s.includes("FAIL") || s.includes("BLOCKED")) return "FAIL/BLOCKED";
+  return "PARTIAL";
+}
+function renderAll() {
+  renderOne("B1", "heardB1"); renderOne("B2", "heardB2"); renderOne("B3", "heardB3");
+  const sep = R.B3 && R.B3.separationQuality ? ` · pemisahan mic/sistem: <b>${R.B3.separationQuality}</b>` : "";
+  $("summary").innerHTML = `B1 ${R.B1 ? badge(R.B1.status) : "—"} · B2 ${R.B2 ? badge(R.B2.status) : "—"} · B3 ${R.B3 ? badge(R.B3.status) : "—"}${sep}<br>Saran status Gate B (keputusan final di review): <b>${gate()}</b>`;
+  buildJson();
+}
+function buildJson() {
+  const strip = x => { if (!x) return x; const c = Object.assign({}, x); delete c.audioHtml; return c; };
+  const out = { exportedUtc: new Date().toISOString(), page: R.page, fastMode: FAST, userAgent: navigator.userAgent, secureContext: window.isSecureContext,
+    audioContextSampleRate: ctx ? ctx.sampleRate : null, config: CFG, B1: strip(R.B1), B2: strip(R.B2), B3: strip(R.B3), wasapi: R.wasapi,
+    gateBSuggestion: gate(), userNotes: $("notes").value || null, containsAudio: false };
+  $("out").value = JSON.stringify(out, null, 2); return out;
+}
+$("btnB1").onclick = runB1; $("btnB2").onclick = runB2; $("btnB3").onclick = runB3;
+["heardB1", "heardB2", "heardB3"].forEach(i => $(i).onchange = renderAll);
+$("btnJson").onclick = buildJson;
+$("btnCopy").onclick = async () => { buildJson(); try { await navigator.clipboard.writeText($("out").value); log("JSON disalin ke clipboard", "ok"); } catch (e) { $("out").select(); log("Salin manual: pilih teks lalu Ctrl+C", "warn"); } };
+$("btnDl").onclick = () => { buildJson(); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([$("out").value], { type: "application/json" })); a.download = "step_b_results.json"; a.click(); };
+window.__test = { runB1, runB2, runB3, R, buildJson };
+initEnv();
+</script>
+</body>
+</html>
