@@ -33,7 +33,7 @@ Arti status: **PASS** = kriteria langkah terpenuhi. **PARTIAL** = jalan sebagian
 |---|---|---|---|---|
 | **A** | System Inventory | Baca info perangkat (skrip PowerShell, hanya-baca) | Tidak | **PASS. Gate A disetujui 9 Okt 2026** |
 | **B** | Audio Capture Smoke Test | MIC, SYSTEM AUDIO, MIC+SYSTEM bersamaan (audio non-Zoom) | Tidak | **PASS. Gate B disetujui 12 Okt 2026** (pemisahan POOR pada speaker laptop; Zoom belum terbukti) |
-| **C** | faster-whisper Environment Validation | venv Python 3.12 terisolasi, pasang dependensi, unduh model `small`, muat model, inferensi minimal | **Ya** (venv + model) | **SIAP DIJALANKAN** (lihat bagian Step C) |
+| **C** | faster-whisper Environment Validation | venv Python 3.12 terisolasi, pasang dependensi, unduh model `small`, muat model, inferensi minimal | Ya (venv + model) | **PASS pada percobaan 2** (`PHASE0_TEST_PIN av<17`); percobaan 1 tanpa pin FAIL di C4. Menunggu keputusan Gate C (lihat `STEP_C_REPORT.md`) |
 | D | First Transcription | Satu file simulasi, model `small`, satu evaluasi | Tidak | Belum disiapkan |
 | E | Full CASE 1–7 | Zoom Desktop, headset, speaker laptop, pemisahan track | Tidak | Belum disiapkan |
 | F | Final Benchmark | `small` → `medium` → model besar hanya jika hardware layak | Tidak | Belum disiapkan |
@@ -179,10 +179,10 @@ Pasangan versi yang akan dicatat setelah Step C (kolom Windows diisi dari laptop
 
 | Komponen | Sandbox Linux (acuan, bukan keputusan) | Windows (diisi di Step C) |
 |---|---|---|
-| Python | 3.13.16 | ? |
-| faster-whisper | 1.2.1 | ? |
-| ctranslate2 | 4.8.2 | ? |
-| av | 19.0.1 **gagal**; 15.1.0 dan 16.0.1 **berfungsi** (hanya jalur `decode_audio`) | ? |
+| Python | 3.13.16 | **3.12.10** |
+| faster-whisper | 1.2.1 | **1.2.1** |
+| ctranslate2 | 4.8.2 | **4.8.2** |
+| av | 19.0.1 **gagal**; 15.1.0, 16.0.1, 16.1.0, 17.1.0, 18.1.0 berfungsi (jalur `decode_audio`, Linux) | 19.0.1 **gagal**; **16.1.0 berfungsi** (`PHASE0_TEST_PIN av<17`). 17.x/18.x belum diuji di Windows |
 | torch | tidak dipakai | tidak dipasang kecuali terbukti perlu |
 | CUDA / cuDNN | tidak ada GPU | hanya jika Step A menunjukkan NVIDIA dan Step F membutuhkannya |
 

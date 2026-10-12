@@ -1,0 +1,132 @@
+{
+  "_note": "Percobaan 2 (PHASE0_TEST_PIN av<17), dikirim pengguna 12 Okt 2026 04:26Z. Venv dipakai ulang dari percobaan 1. Metadata saja, tanpa audio.",
+  "step": "C - faster-whisper environment validation",
+  "script_version": "1.0-stepC",
+  "generated_utc": "2026-10-12T04:26:28Z",
+  "model": "small",
+  "device": "cpu",
+  "compute_type": "int8",
+  "work_root": "D:\\phase0-work",
+  "av_pin_argument": "av<17 (PHASE0_TEST_PIN)",
+  "gate_c_suggestion": "PASS",
+  "stages": {
+    "C1": {
+      "status": "PASS",
+      "evidence": {
+        "venv_python": "Python 3.12.10",
+        "venv_reused": true,
+        "base_python": "Python 3.12.10"
+      }
+    },
+    "C2": {
+      "status": "SKIPPED",
+      "evidence": {
+        "pip_version": "25.0.1",
+        "note": "pip tidak dinaikkan (tidak diminta)"
+      }
+    },
+    "C3": {
+      "status": "PASS",
+      "evidence": {
+        "pip_args": "-m pip install --disable-pip-version-check --no-input faster-whisper av<17",
+        "installed_packages": 24
+      }
+    },
+    "C4": {
+      "status": "PASS",
+      "evidence": {
+        "imports": "faster_whisper, ctranslate2, av, tokenizers, huggingface_hub, numpy: OK",
+        "onnxruntime_import": "OK",
+        "cpu_supported_compute_types": [
+          "float32",
+          "int16",
+          "int8",
+          "int8_float32"
+        ],
+        "int8_supported_on_cpu": true,
+        "cuda_device_count": 0,
+        "decode_audio_samples": 16000,
+        "decode_audio_ok": true
+      }
+    },
+    "C5": {
+      "status": "PASS",
+      "evidence": {
+        "download_seconds": 389.4,
+        "repo_commit_sha": "536b0662742c02347bc0e980a01041f333bce120",
+        "checksum_all_ok": true,
+        "model_bin_present": true,
+        "files": [
+          {
+            "file": "config.json",
+            "size": 2370,
+            "expected_size": 2370,
+            "ok": true
+          },
+          {
+            "file": "model.bin",
+            "size": 483546902,
+            "expected_size": 483546902,
+            "sha256": "3e305921506d8872816023e4c273e75d2419fb89b24da97b4fe7bce14170d671",
+            "expected_sha256": "3e305921506d8872816023e4c273e75d2419fb89b24da97b4fe7bce14170d671",
+            "ok": true
+          },
+          {
+            "file": "tokenizer.json",
+            "size": 2203239,
+            "expected_size": 2203239,
+            "ok": true
+          },
+          {
+            "file": "vocabulary.txt",
+            "size": 459861,
+            "expected_size": 459861,
+            "ok": true
+          }
+        ]
+      }
+    },
+    "C6": {
+      "status": "PASS",
+      "evidence": {
+        "device": "cpu",
+        "compute_type": "int8",
+        "load_seconds": 1.52
+      }
+    },
+    "C7": {
+      "status": "PASS",
+      "evidence": {
+        "audio_seconds": 8.72,
+        "language_requested": "en",
+        "language_detected": "en",
+        "language_probability": 1.0,
+        "transcribe_seconds": 2.75,
+        "rtf_informational_only": 0.315,
+        "transcript": "This is a short synthetic test of the local transcription engine. The outstanding value is 495 billion rupiah.",
+        "expected_text": "This is a short synthetic test of the local transcription engine. The outstanding value is four hundred ninety five billion rupiah.",
+        "word_overlap": 0.79
+      }
+    }
+  },
+  "details": {
+    "free_disk_gb_on_workroot_drive": 296.4,
+    "versions": {
+      "faster-whisper": "1.2.1",
+      "ctranslate2": "4.8.2",
+      "av": "16.1.0",
+      "tokenizers": "0.23.3",
+      "huggingface-hub": "2.2.0",
+      "onnxruntime": "1.31.0",
+      "numpy": "2.5.4",
+      "tqdm": "4.70.1",
+      "pip": "25.0.1"
+    },
+    "python_in_venv": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "tts": {
+      "voice": "Microsoft David Desktop",
+      "culture": "en-US",
+      "language_used": "en"
+    }
+  }
+}

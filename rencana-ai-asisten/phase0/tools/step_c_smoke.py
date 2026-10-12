@@ -120,7 +120,7 @@ def cmd_download(a):
             if s.rfilename in ("config.json", "preprocessor_config.json", "model.bin", "tokenizer.json", "vocabulary.json", "vocabulary.txt"):
                 lfs = getattr(s, "lfs", None)
                 exp[s.rfilename] = {"size": s.size, "sha256": (getattr(lfs, "sha256", None) or (lfs.get("sha256") if lfs else None)) if lfs else None}
-        rows, ok = verify_files(path, {k: v for k, v in exp.items() if os.path.isfile(os.path.join(path, k))})
+        rows, ok = verify_files(path, exp)   # semua berkas yang diharapkan Hub; yang hilang lokal ditandai (v1 menyaring yang ada saja)
         res["evidence"]["files"] = rows; res["evidence"]["model_bin_present"] = any(r["file"] == "model.bin" and r["present"] for r in rows)
         res["evidence"]["checksum_all_ok"] = ok
         if not res["evidence"]["model_bin_present"] or not ok:
