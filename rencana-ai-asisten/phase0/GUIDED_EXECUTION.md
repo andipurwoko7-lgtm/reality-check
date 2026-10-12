@@ -33,8 +33,8 @@ Arti status: **PASS** = kriteria langkah terpenuhi. **PARTIAL** = jalan sebagian
 |---|---|---|---|---|
 | **A** | System Inventory | Baca info perangkat (skrip PowerShell, hanya-baca) | Tidak | **PASS. Gate A disetujui 9 Okt 2026** |
 | **B** | Audio Capture Smoke Test | MIC, SYSTEM AUDIO, MIC+SYSTEM bersamaan (audio non-Zoom) | Tidak | **PASS. Gate B disetujui 12 Okt 2026** (pemisahan POOR pada speaker laptop; Zoom belum terbukti) |
-| **C** | faster-whisper Environment Validation | venv Python 3.12 terisolasi, pasang dependensi, unduh model `small`, muat model, inferensi minimal | Ya (venv + model) | **PASS pada percobaan 2** (`PHASE0_TEST_PIN av<17`); percobaan 1 tanpa pin FAIL di C4. Menunggu keputusan Gate C (lihat `STEP_C_REPORT.md`) |
-| D | First Transcription | Satu file simulasi, model `small`, satu evaluasi | Tidak | Belum disiapkan |
+| **C** | faster-whisper Environment Validation | venv Python 3.12 terisolasi, pasang dependensi, unduh model `small`, muat model, inferensi minimal | Ya (venv + model) | **PASS. Gate C disetujui 12 Okt 2026** (`PHASE0_TEST_PIN av<17`; percobaan 1 tanpa pin FAIL di C4; lihat `STEP_C_REPORT.md`) |
+| **D** | First Transcription | Satu rekaman simulasi berbahasa Indonesia, model `small`, satu konfigurasi, satu evaluasi terhadap ground truth | Tidak | **SIAP DIJALANKAN** (lihat bagian Step D) |
 | E | Full CASE 1–7 | Zoom Desktop, headset, speaker laptop, pemisahan track | Tidak | Belum disiapkan |
 | F | Final Benchmark | `small` → `medium` → model besar hanya jika hardware layak | Tidak | Belum disiapkan |
 
@@ -141,10 +141,46 @@ Sebelum mengirim, buka file `.txt` dan pastikan tidak ada yang tidak ingin kamu 
 
 ---
 
-## Ketentuan untuk langkah berikutnya (belum disiapkan)
+## STEP D — First Transcription (siap dijalankan)
 
-### Step D — First Transcription
-- Satu file simulasi, model `small`, satu kali evaluasi.
+**Alat:** `phase0/step_d_run.ps1` (pembungkus) + `phase0/tools/step_d_transcribe.py`. Naskah baca: `phase0/test_data/naskah_baca_stepd.txt`. Laporan: `phase0/STEP_D_REPORT.md`. Hasil: `phase0/results/step_d/`.
+
+**Pertanyaan yang dijawab:** seberapa baik model `small` pada **suara Indonesia nyata** (campur istilah Inggris, angka, nama, singkatan finance), diukur terhadap ground truth, bukan berdasarkan kesan. Ini belum benchmark: model lain, prompt glosarium, dan bahasa `auto` dibandingkan di Step F.
+
+**Kebijakan:**
+- **Tanpa instalasi apa pun** dan **tanpa jaringan** (model dimuat dari disk, `local_files_only`). ffmpeg tidak dibutuhkan: PyAV membaca `.m4a`, `.wav`, `.mp3`, `.webm`, `.ogg` (diuji di sandbox).
+- Audio = **suaramu membaca naskah fiktif**. Bukan rapat kantor, bukan audio sistem, bukan Zoom. Audio tidak disalin dan tidak dikirim; `*.m4a`/`*.wav` di-ignore git.
+- Satu konfigurasi: `language=id` (dipaksa), `beam_size=5`, VAD aktif, tanpa prompt, `condition_on_previous_text=False`.
+- **Transkrip mentah tidak diubah**: disimpan terpisah, read-only, dengan SHA-256. Versi "bersih" bukan bagian Step D (Phase 4); alat hanya mengekstrak fakta angka sebagai data terstruktur di samping teks asli.
+
+**Cara merekam (sekitar 6 menit):**
+1. Ruangan sepi; kurangi kipas/AC bila bisa (noise floor mic-mu −44 dBFS di Step B). Charger terpasang. Jarak ke laptop ±30-40 cm. Tutup Zoom dan aplikasi yang berbunyi.
+2. Buka `phase0\test_data\naskah_baca_stepd.txt` di Notepad. Isinya 20 paragraf = 20 giliran bicara tanpa nama pembicara. Baca **semua** berurutan, **sendirian untuk semua peran**, tempo normal, jeda 2-3 detik antar paragraf. Angka dibaca seperti tertulis (dalam kata).
+3. Rekam dengan **Perekam Suara Windows** (Start, ketik "Sound Recorder" atau "Perekam Suara"; mic default = Microphone Array). Tekan rekam, baca, stop. Berkas `.m4a` biasanya di `Documents\Sound Recordings`.
+4. Dengarkan sebentar. Catat jika ada kalimat yang terlewat atau diulang (penyimpangan dari naskah mempengaruhi WER).
+
+**Menjalankan** (di folder `phase0`; ZIP terbaru diperlukan karena file Step D baru):
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\step_d_run.ps1 -Audio "C:\path\ke\rekaman.m4a" -Notes "catatan penyimpangan, boleh kosong"
+```
+
+| Sub-gate | PASS jika |
+|---|---|
+| D1 | Audio terbaca (decode), ≥ 10 detik, tidak senyap |
+| D2 | Transkripsi selesai tanpa error; waktu, RTF, puncak RAM tercatat |
+| D3 | Bahasa terdeteksi `id` dengan probabilitas ≥ 0,8 |
+| D4 | Transkrip mentah + segmen tersimpan; SHA-256 tercatat |
+| D5 | Evaluasi terhadap ground truth terhitung (WER, WER normalisasi angka, CER, istilah per kategori, angka, tanggal) |
+
+**Kualitas dilaporkan terpisah dari lulus-tidaknya pipeline,** dibandingkan dengan ambang Phase 0 dari RENCANA §10.5 (tidak diubah): WER (setelah normalisasi angka) ≤ 20%, istilah ≥ 90%, angka ≥ 95% (atau salah-terflag). Hasilnya `MEETS` / `PARTIAL` / `BELOW` (deskriptif). Segmen yang meragukan hanya ditandai `NEEDS_REVIEW`, tidak ditebak.
+
+**Terverifikasi di sandbox:** decode lima format audio; alur D1-D5 dengan mesin tiruan (bukan hasil Whisper); transkrip mentah read-only dan checksum konsisten; jalan ulang ke folder yang sama; gagal-bersih pada audio rusak. **Belum terverifikasi:** seluruh Step D pada model nyata dan suara nyata; skrip PowerShell hanya dicek statis dan belum pernah dijalankan; pengukuran puncak RAM di Windows (`ctypes`) belum teruji.
+
+> ## STOP FOR DEVICE REVIEW (Gate D)
+
+---
+
+## Ketentuan untuk langkah berikutnya (belum disiapkan)
 
 ### Step E — Full CASE 1–7
 - Seperti di `RUNBOOK.md` Langkah 3–4, tetapi hanya setelah Gate B dan D terbuka.
