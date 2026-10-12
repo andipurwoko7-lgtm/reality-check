@@ -12,7 +12,7 @@ Tanggal: 8 Oktober 2026 · Baseline: `RENCANA_PEMBANGUNAN.md` v1.1 · Status: **
 | `NOT RUN` | Butuh laptop/HP/orang kamu. Belum dijalankan |
 | `UNKNOWN` | Informasi dari kamu/kantor yang belum ada. Tidak ditebak |
 
-Gate A: **PASS** (9 Okt) · Gate B: **PASS dengan catatan** (12 Okt; `phase0/STEP_B_REPORT.md`) · Gate C: **PASS** (12 Okt; `phase0/STEP_C_REPORT.md`) · Step D: disiapkan, menunggu rekaman dan eksekusi.
+Gate A: **PASS** (9 Okt) · Gate B: **PASS dengan catatan** (12 Okt; `phase0/STEP_B_REPORT.md`) · Gate C: **PASS** (12 Okt; `phase0/STEP_C_REPORT.md`) · Gate D: **PASS pipeline / kualitas PARTIAL** (12 Okt; `phase0/STEP_D_REPORT.md`) · Step F (benchmark) disiapkan, menunggu eksekusi; Step E ditunda sampai Gate F.
 
 ---
 

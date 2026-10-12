@@ -4,6 +4,7 @@ results/*
 !results/step_b/
 !results/step_c/
 !results/step_d/
+!results/step_f/
 *.wav
 *.webm
 *.mkv

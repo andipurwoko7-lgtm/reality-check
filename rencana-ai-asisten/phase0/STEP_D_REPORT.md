@@ -1,6 +1,6 @@
 # STEP D REPORT — First Transcription
 
-Status: **SELESAI (12 Okt 2026). Pipeline D1-D5 = PASS. Kualitas terhadap ambang Phase 0 = PARTIAL (WER ternormalisasi 21,7%, istilah 67%). Gate D menunggu keputusan pemilik.**
+Status: **SELESAI (12 Okt 2026). Pipeline D1-D5 = PASS. Kualitas terhadap ambang Phase 0 = PARTIAL (WER ternormalisasi 21,7%, istilah 67%). Gate D disetujui (pipeline PASS, kualitas PARTIAL).**
 Data: konsol apa adanya di `results/step_d/step_d_console_attempt1.txt`. `step_d_results.json` dan `evaluation_summary.txt` belum diterima (konsol memuat ringkasan; 10 dari 20 segmen NEEDS_REVIEW tampil).
 Model: **small** · Device: **CPU** · Compute type: **int8** · Python venv: 3.12.10 · `av` 16.1.0 (`PHASE0_TEST_PIN`) · tanpa jaringan, tanpa instalasi.
 Konfigurasi tunggal: `language=id` (dipaksa), `beam_size=5`, VAD aktif, tanpa prompt, `condition_on_previous_text=False`.
@@ -75,6 +75,8 @@ Format: **STATUS · EVIDENCE · ERROR · INTERPRETATION · NEXT ACTION**. Label:
 - Bacaan satu orang untuk semua peran lebih sederhana daripada rapat nyata (suara berbeda, tumpang tindih, kualitas kanal): hasil cenderung **optimistis** (`DESK`).
 
 ## Gate D
+**Keputusan pemilik (12 Okt 2026, "lanjutkan sesuai saranmu"): Gate D = PASS untuk pipeline, kualitas PARTIAL dicatat; Step F dikerjakan sebelum Step E.**
+
 **Saran: Gate D dapat dibuka sebagai PASS untuk pipeline (D1-D5), dengan kualitas PARTIAL dicatat jelas.** Kualitas model belum memenuhi ambang Phase 0 pada konfigurasi default `small`; itu bukan kegagalan Step D, tetapi menjadikan Step F (perbandingan model, prompt, bahasa) penentu apakah syarat G5 terpenuhi. Step E tidak dimulai sebelum Gate D disetujui.
 
 **Usulan urutan (keputusan pemilik):** Step F dapat dikerjakan **sebelum** Step E, karena (a) memakai file rekaman yang sama tanpa Zoom/orang lain, (b) menjawab pertanyaan kelayakan terbesar yang tersisa (apakah ambang tercapai), dan (c) hasilnya tidak bergantung pada hasil CASE 1-7.

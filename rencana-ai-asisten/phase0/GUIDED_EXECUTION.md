@@ -34,9 +34,9 @@ Arti status: **PASS** = kriteria langkah terpenuhi. **PARTIAL** = jalan sebagian
 | **A** | System Inventory | Baca info perangkat (skrip PowerShell, hanya-baca) | Tidak | **PASS. Gate A disetujui 9 Okt 2026** |
 | **B** | Audio Capture Smoke Test | MIC, SYSTEM AUDIO, MIC+SYSTEM bersamaan (audio non-Zoom) | Tidak | **PASS. Gate B disetujui 12 Okt 2026** (pemisahan POOR pada speaker laptop; Zoom belum terbukti) |
 | **C** | faster-whisper Environment Validation | venv Python 3.12 terisolasi, pasang dependensi, unduh model `small`, muat model, inferensi minimal | Ya (venv + model) | **PASS. Gate C disetujui 12 Okt 2026** (`PHASE0_TEST_PIN av<17`; percobaan 1 tanpa pin FAIL di C4; lihat `STEP_C_REPORT.md`) |
-| **D** | First Transcription | Satu rekaman simulasi berbahasa Indonesia, model `small`, satu konfigurasi, satu evaluasi terhadap ground truth | Tidak | **SIAP DIJALANKAN** (lihat bagian Step D) |
-| E | Full CASE 1–7 | Zoom Desktop, headset, speaker laptop, pemisahan track | Tidak | Belum disiapkan |
-| F | Final Benchmark | `small` → `medium` → model besar hanya jika hardware layak | Tidak | Belum disiapkan |
+| **D** | First Transcription | Satu rekaman simulasi berbahasa Indonesia, model `small`, satu konfigurasi, satu evaluasi terhadap ground truth | Tidak | **Gate D disetujui 12 Okt 2026**: pipeline PASS, kualitas PARTIAL (`STEP_D_REPORT.md`). Pemilik menyetujui urutan F sebelum E |
+| E | Full CASE 1–7 | Zoom Desktop, headset, speaker laptop, pemisahan track | Tidak | Ditunda sampai Gate F (belum disiapkan) |
+| **F** | Benchmark | Rekaman Step D yang sama: `small` → `medium` (→ besar hanya jika diminta); 3 varian (bahasa id / prompt glosarium / bahasa auto) | Ya (unduh model medium ±1,5 GB) | **SIAP DIJALANKAN** (`step_f_run.ps1`, lihat `STEP_F_REPORT.md`) |
 
 **Hanya Step A yang disiapkan sekarang.** Spesifikasi B–F di bawah adalah *ketentuan* yang sudah saya catat dari arahanmu, bukan alat yang sudah ada.
 
@@ -185,7 +185,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\step_d_run.ps1 -Audio "C:\
 ### Step E — Full CASE 1–7
 - Seperti di `RUNBOOK.md` Langkah 3–4, tetapi hanya setelah Gate B dan D terbuka.
 
-### Step F — Final Benchmark
+### Step F — Benchmark (SUDAH DISIAPKAN, lihat `STEP_F_REPORT.md`; ringkasan lama di bawah hanya konteks)
 - **Urutan:** `small` → `medium` → model besar **hanya jika hardware layak** (keputusan setelah Step A dan D).
 - File uji yang sama untuk semua model.
 - Catat per model:
