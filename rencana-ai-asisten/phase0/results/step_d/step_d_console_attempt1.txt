@@ -1,0 +1,61 @@
+STEP D, percobaan 1, 12 Okt 2026. Keluaran konsol dikirim pengguna APA ADANYA (setelah memperbaiki bug -Notes kosong di step_d_run.ps1).
+Catatan pengguna: "tidak ada penyimpangan". step_d_results.json dan evaluation_summary.txt BELUM dikirim (isi konsol = ringkasan; 10 dari 20 segmen NEEDS_REVIEW tampil).
+Rekaman: suara pengguna membaca naskah fiktif 534 kata, mic default (Microphone Array), satu pembicara untuk semua peran. Audio tidak dikirim.
+
+== STEP D: transkripsi pertama (small / CPU / int8). ==
+[D1] audio decode : PASS
+[D2] transcription : PASS
+[D3] language detection : PASS
+[D4] raw transcript saved : PASS
+[D5] evaluation vs ground truth : PASS
+STEP D - RINGKASAN EVALUASI (small / CPU / int8; language=id; tanpa prompt)
+
+Audio: 253.2 detik | transkripsi 43.0 detik | RTF 0.17 | puncak RAM 754.3 MB
+Bahasa terdeteksi: id (1.000)
+
+WER mentah: 33.8% | WER setelah normalisasi angka: 21.7% | CER: 20.1%
+Istilah (strict): 67% | (lenient): 76%
+Angka strict 95% / lenient 95% | tanggal 100%
+Terhadap ambang Phase 0: PARTIAL  {"WER_number_normalized <= 0.20": false, "istilah (strict) >= 0.90": false, "angka (lenient) >= 0.95": true}
+
+Istilah per kategori:
+  names           strict 67% lenient 83%  salah: ['BNI']  mirip: ['Sari']
+  abbreviations   strict 60% lenient 100%  salah: []  mirip: ['DSCR', 'EBITDA']
+  finance_terms   strict 65% lenient 70%  salah: ['treasury', 'going concern', 'negative pledge', 'cross default', 'term sheet', 'basis poin']  mirip: ['penghematan']
+  english_mixed   strict 72% lenient 72%  salah: ['rate', 'indicative pricing', 'base case', 'please make sure', 'cross check']  mirip: []
+
+Angka yang SALAH/tidak terbaca: ['N08 biaya penerbitan Rp']
+Angka benar tetapi mata uang tak disebut: []
+Tanggal salah: []
+Angka ambigu (ditandai, tidak ditebak): []
+
+Substitusi terbanyak (kebenaran -> terdengar):
+  3x  'bu sari' -> 'busari'
+  2x  'tempo' -> 'timbo'
+  2x  'dua belas persen' -> '12 %'
+  2x  'rate' -> 'red'
+  2x  'sepuluh' -> '10'
+  2x  'rabu empat belas' -> 'r 14'
+  2x  'cash flow' -> 'ks 10'
+  2x  'dua belas' -> '12'
+  1x  'pak' -> 'bagi'
+  1x  'delapan' -> '8'
+  1x  'proyeksi' -> 'proyeksik'
+  1x  'aset hotel' -> 'asat podal'
+  1x  'pak andi' -> 'peani'
+  1x  'nilai' -> 'anilnya'
+  1x  'treasury' -> 'treseri'
+
+Segmen yang perlu dicek (NEEDS_REVIEW): 20
+  [25s] Baik peani, untuk posisi Outstanding, anilnya Outstanding MTN saat ini sebesar 495 miliar rupiah.  (no_speech_prob>0.6)
+  [34s] Seri A sebesar 250 miliar rupiah akan jatuh timbo pada bulan March 2027.  (no_speech_prob>0.6)
+  [42s] Berarti sisanya 245 miliar rupiah itu seri B ya Pak.  (no_speech_prob>0.6)
+  [48s] Betul, seri B jatuh timbo bulan Desember 2027.  (no_speech_prob>0.6)
+  [53s] Kupon seri A saat ini 12% per tahun dari sisi treseri kita punya opsi refinancing dengan red delapan per sen, tenor 5 ta  (no_speech_prob>0.6)
+  [65s] Jadi red bunga berubah dari 12% menjadi 8% kalau dihitung untuk seri A, perhematan bunga sekitar 10 miliar rupiah per ta  (no_speech_prob>0.6)
+  [147s] ebida tahun depan kita asmisikan 120 miliar rupiah  (no_speech_prob>0.6)
+  [152s] oke masih aman  (no_speech_prob>0.6)
+  [154s] tapi kalau ada going constant issue dari auditor kita perlu bahas dulu  (no_speech_prob>0.6)
+  [159s] nunggu going awesome saya sarankan kita follow up dengan auditor minggu depan  (no_speech_prob>0.6)
+
+STATUS: PASS (pipeline selesai; kualitas ada di ringkasan di atas)

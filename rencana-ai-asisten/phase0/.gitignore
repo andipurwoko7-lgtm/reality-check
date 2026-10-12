@@ -3,6 +3,7 @@ results/*
 !results/.gitkeep
 !results/step_b/
 !results/step_c/
+!results/step_d/
 *.wav
 *.webm
 *.mkv
