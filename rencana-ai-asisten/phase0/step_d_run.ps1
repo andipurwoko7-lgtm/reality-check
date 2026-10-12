@@ -75,8 +75,9 @@ New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 Write-Host '== STEP D: transkripsi pertama (small / CPU / int8). Audio 5-6 menit biasanya selesai dalam beberapa menit. =='
 $old = $ErrorActionPreference
 $ErrorActionPreference = 'Continue'
+# '--notes=' + nilai: PowerShell 5.1 membuang argumen string kosong saat memanggil program native, jadi bentuk '--notes' '' gagal.
 & $venvPy $script '--audio' $Audio '--model-dir' $modelDir '--out-dir' $outDir '--truth' (Join-Path $td 'ground_truth_full.txt') `
-    '--facts' (Join-Path $td 'key_facts.json') '--terms' (Join-Path $td 'key_terms.json') '--notes' $Notes 2>&1 | ForEach-Object { Write-Host (Redact ($_.ToString())) }
+    '--facts' (Join-Path $td 'key_facts.json') '--terms' (Join-Path $td 'key_terms.json') ('--notes=' + $Notes) 2>&1 | ForEach-Object { Write-Host (Redact ($_.ToString())) }
 $code = $LASTEXITCODE
 $ErrorActionPreference = $old
 
