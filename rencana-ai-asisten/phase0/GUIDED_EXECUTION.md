@@ -32,8 +32,8 @@ Arti status: **PASS** = kriteria langkah terpenuhi. **PARTIAL** = jalan sebagian
 | Step | Nama | Isi | Instalasi? | Gate |
 |---|---|---|---|---|
 | **A** | System Inventory | Baca info perangkat (skrip PowerShell, hanya-baca) | Tidak | **PASS. Gate A disetujui 9 Okt 2026** |
-| **B** | Audio Capture Smoke Test | Bukti: MIC, SYSTEM AUDIO, MIC+SYSTEM bersamaan (audio non-Zoom) | Tidak | **HASIL MASUK: B1 PASS, B2 PASS, B3 PASS (pemisahan POOR); menunggu keputusan Gate B** (lihat `STEP_B_REPORT.md`) |
-| C | faster-whisper Environment | Python venv, pasang paket, uji unduh model langsung dari laptop | Ya (venv) | Belum disiapkan |
+| **B** | Audio Capture Smoke Test | MIC, SYSTEM AUDIO, MIC+SYSTEM bersamaan (audio non-Zoom) | Tidak | **PASS. Gate B disetujui 12 Okt 2026** (pemisahan POOR pada speaker laptop; Zoom belum terbukti) |
+| **C** | faster-whisper Environment Validation | venv Python 3.12 terisolasi, pasang dependensi, unduh model `small`, muat model, inferensi minimal | **Ya** (venv + model) | **SIAP DIJALANKAN** (lihat bagian Step C) |
 | D | First Transcription | Satu file simulasi, model `small`, satu evaluasi | Tidak | Belum disiapkan |
 | E | Full CASE 1–7 | Zoom Desktop, headset, speaker laptop, pemisahan track | Tidak | Belum disiapkan |
 | F | Final Benchmark | `small` → `medium` → model besar hanya jika hardware layak | Tidak | Belum disiapkan |
@@ -109,13 +109,39 @@ Sebelum mengirim, buka file `.txt` dan pastikan tidak ada yang tidak ingin kamu 
 
 ---
 
-## Ketentuan untuk langkah berikutnya (belum disiapkan)
+## STEP C — faster-whisper Environment Validation (siap dijalankan)
 
-### Step C — faster-whisper Environment
-- Pasang di venv terpisah, tanpa menyentuh Python sistem.
-- **Uji unduh model langsung dari laptop.** Kegagalan 403 di cloud tidak berarti laptop juga gagal.
-- Jika HuggingFace diblok di laptop: alternatif resmi dan aman saja — (1) minta IT mengizinkan `huggingface.co`; (2) unduh berkas model dari halaman resmi repo model di jaringan yang diizinkan lalu pindahkan manual (USB) ke folder lokal dan jalankan dengan jalur lokal; (3) jaringan lain yang sah (mis. hotspot pribadi) jika kebijakan membolehkan. **Tidak memakai situs mirror pihak ketiga yang tidak tepercaya.**
-- Catat pasangan versi hasil `pip freeze` dari lingkungan yang benar-benar jalan.
+**Alat:** `phase0/step_c_whisper_env.ps1` (orkestrator) + `phase0/tools/step_c_smoke.py` (uji di dalam venv). Laporan: `phase0/STEP_C_REPORT.md`. Hasil: `phase0/results/step_c/`.
+
+**Cakupan sempit:** hanya membuktikan lingkungan bekerja. **Bukan** benchmark kualitas, bukan uji istilah finance, bukan rapat panjang. Step D belum dimulai.
+
+| Sub-gate | Isi | PASS jika |
+|---|---|---|
+| C1 | Buat venv Python **3.12** (bukan default 3.14) | `py -3.12` ada dan venv terbentuk |
+| C2 | Cek pip; naikkan hanya jika `-UpgradePip` | versi pip tercatat (default: tidak dinaikkan) |
+| C3 | `pip install faster-whisper` (tanpa pin, apa adanya) | exit code 0; `pip freeze` disimpan |
+| C4 | Import paket + uji **decode audio** (PyAV) + dukungan `int8` di CPU | semua import OK, decode OK, `int8` didukung |
+| C5 | Unduh model **`small`** dari Hugging Face resmi (`Systran/faster-whisper-small`) + cocokkan SHA-256 dengan metadata Hub | berkas lengkap dan checksum cocok. Jika diblok: **BLOCKED**, error dicatat apa adanya |
+| C6 | Muat model: `device=cpu`, `compute_type=int8`, `local_files_only` | model termuat |
+| C7 | Transkripsi minimal pada audio sintetis (suara TTS Windows lokal, non-rahasia) | teks tidak kosong dan ≥40% kata cocok (smoke test, bukan akurasi) |
+
+**Berurutan dan berhenti di kegagalan pertama.** Tidak ada yang dilompati.
+
+**Kebijakan:**
+- Python global tidak diubah. Semua paket hanya masuk ke venv.
+- **Lokasi venv dan model: `D:\phase0-work` (pendek, di luar repo).** Alasan terukur: berkas terdalam paket yang akan dipasang (127 karakter) ditambah path venv di dalam folder phase0 ±302 karakter, melewati batas path Windows 260 karakter. Ini berbeda dari contoh `phase0/.venv-whisper`.
+- Hanya model `small`. Tidak ada medium/large. Tidak ada ffmpeg (PyAV membaca WAV sendiri).
+- Pin versi (`-AvPin`) hanya bila diminta setelah review, berstatus **PHASE0_TEST_PIN**, bukan dependency produksi.
+- Audio sintetis TTS Windows. Tidak ada audio perusahaan, tidak ada audio ke cloud AI. Inferensi lokal.
+- Akses jaringan: pip (`pypi.org`, `files.pythonhosted.org`) dan unduh model (`huggingface.co` dan CDN-nya). Tanpa mirror tidak tepercaya.
+
+**Terverifikasi di sandbox (Linux):** deteksi kegagalan C4 pada `av` bermasalah (instalasi tanpa pin → `av 19.0.1` → FAIL dengan pesan error apa adanya) dan PASS pada `av` yang berfungsi; C5 memetakan jaringan yang memblokir menjadi BLOCKED dengan 403 apa adanya; verifikasi checksum (cocok, sha salah, berkas hilang, ukuran salah); C6 gagal-bersih tanpa menyentuh jaringan. **Belum terverifikasi:** C1, C2, C3 di Windows, serta C6/C7 dengan model nyata (model tidak bisa diunduh di sandbox). Skrip PowerShell hanya dicek statis dan belum pernah dijalankan.
+
+> ## STOP FOR DEVICE REVIEW (Gate C)
+
+---
+
+## Ketentuan untuk langkah berikutnya (belum disiapkan)
 
 ### Step D — First Transcription
 - Satu file simulasi, model `small`, satu kali evaluasi.

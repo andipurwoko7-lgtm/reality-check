@@ -2,6 +2,7 @@
 results/*
 !results/.gitkeep
 !results/step_b/
+!results/step_c/
 *.wav
 *.webm
 *.mkv

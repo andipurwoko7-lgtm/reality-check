@@ -12,6 +12,8 @@ Tanggal: 8 Oktober 2026 · Baseline: `RENCANA_PEMBANGUNAN.md` v1.1 · Status: **
 | `NOT RUN` | Butuh laptop/HP/orang kamu. Belum dijalankan |
 | `UNKNOWN` | Informasi dari kamu/kantor yang belum ada. Tidak ditebak |
 
+Gate A: **PASS** (9 Okt) · Gate B: **PASS dengan catatan** (12 Okt; lihat `phase0/STEP_B_REPORT.md`) · Step C: disiapkan, menunggu eksekusi.
+
 ---
 
 ## 1. Executive Summary
@@ -235,7 +237,7 @@ Alasan (prioritas RELIABILITY > ELEGANCE):
 | Laptop kantor **tidak boleh** memasang apa pun (P11 = tidak) | Browser capture menjadi PRIMARY; fallback = upload file dari perekam lain/HP |
 | CASE 2, 3, 6, 7 semuanya PASS pada ≥3 sesi 30 menit **dan** pemilik memilih nol-instalasi | Browser boleh jadi PRIMARY (tetap simpan fallback lokal) |
 | Skrip WASAPI gagal/tidak stabil di laptopmu | PRIMARY = OBS; recorder sendiri ditunda |
-| Speaker laptop sering dipakai (CASE 5 bocor >20%) | Wajib tambah diarization/penandaan manual; label "USER" tidak boleh dipercaya otomatis |
+| Speaker laptop sering dipakai (CASE 5 bocor >20%) | Wajib tambah diarization/penandaan manual; track mic **tidak boleh dianggap USER-only**. **Terkonfirmasi di Step B** (isolasi 12,3 dB, POOR) |
 
 Prinsip tambahan: perekam dibungkus **Capture Adapter** (BrowserCapture, LocalWasapi, ObsImport, FileUpload) agar sumber audio bisa ditukar tanpa mengubah sisa sistem.
 
@@ -338,8 +340,8 @@ Uji perbaikan: prompt glosarium (`glossary_prompt.txt`) A/B. Pasca-koreksi glosa
 
 | Sumber | Label | Boleh dipercaya? |
 |---|---|---|
-| Track mic | `USER` (diberi nama, mis. "Andi") | Hanya jika kebocoran mic rendah (diukur) |
-| Track sistem | `PARTICIPANT` / `Unknown Participant` | Ya sebagai kelompok, bukan individu |
+| Track mic | **`LOCAL_MIC`** (v1.2; bukan `USER`) | Bukan "USER-only" selama output = speaker laptop. Status: `UNRELIABLE_SOURCE_SEPARATION` |
+| Track sistem | **`SYSTEM_AUDIO`** (v1.2; bukan `OTHER_PARTICIPANTS`) | Sebagai sumber audio, bukan identitas orang |
 | Diarization (jika dipakai) | `Speaker 1`, `Speaker 2` | Label anonim; nama hanya setelah dikonfirmasi pengguna |
 | Nama peserta lain | **Tidak diklaim** | Pemetaan manual / saran dari undangan kalender, selalu dikonfirmasi |
 
@@ -347,7 +349,7 @@ Uji perbaikan: prompt glosarium (`glossary_prompt.txt`) A/B. Pasca-koreksi glosa
 
 | Kebocoran (4-gram) | Penilaian |
 |---|---|
-| < 5% | PASS: label USER dapat dipercaya |
+| < 5% | PASS: pemisahan sumber dapat dipercaya (label USER baru boleh dipertimbangkan setelah tervalidasi) |
 | 5–20% | PARTIAL: perlu penandaan manual untuk segmen yang meragukan |
 | > 20% | FAIL: pemisahan mic/sistem tidak dapat dipakai; wajib headset atau diarization |
 
@@ -396,7 +398,7 @@ Usulan perubahan terhadap baseline (belum dimasukkan ke RENCANA kecuali yang ber
 
 1. **Capture Adapter** di Local Worker: `LocalWasapi` (primary), `ObsImport` (fallback), `BrowserCapture` (HP/opsional), `FileUpload`. Sumber audio bisa diganti tanpa mengubah pipeline.
 2. **Audio Route** (LOCAL_ONLY / SERVER_TEMP) — *sudah masuk RENCANA v1.1 §14.1*.
-3. **Label pembicara** USER / PARTICIPANT / Speaker N / UNKNOWN — *sudah masuk RENCANA v1.1 §10.2*. Tabel `transcript_segments.speaker_label` tetap; `person_id` hanya terisi setelah konfirmasi.
+3. **Label sumber** LOCAL_MIC / SYSTEM_AUDIO (+ Speaker N / UNKNOWN) dan `speaker_identity_status` (UNRELIABLE_SOURCE_SEPARATION bila speaker laptop) — *diperbarui di RENCANA v1.2 §10.2; menggantikan USER/PARTICIPANT*. Tabel `transcript_segments.speaker_label` tetap; `person_id` hanya terisi setelah konfirmasi.
 4. **Raw transcript tak berubah (immutable)**: `text_raw` ditulis sekali dan diberi checksum; `text_clean` selalu turunan dengan diff yang bisa ditampilkan. Setiap perubahan fakta tidak boleh menimpa raw.
 5. **Tabel `extracted_facts`**: angka, tanggal, mata uang disimpan **terstruktur** (`kind`, `value`, `raw_span`, `flags`, `segment_id`), bukan hanya teks yang ditulis ulang. UI menampilkan nilai ternormalisasi **dan** teks asli.
 6. **Calendar Provider Adapter** (bagian 4) sebagai antarmuka dari awal, termasuk `IcsFileProvider`.

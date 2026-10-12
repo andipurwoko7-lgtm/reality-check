@@ -296,8 +296,10 @@ Audio (2 track bila ada)
   ↓ 3. Whisper (faster-whisper), bahasa=id, dengan initial_prompt berisi glosarium
   ↓ 4. Timestamp per segmen + confidence
   ↓ 5. Label pembicara:
-        • 2 track bersih → mic = USER (diberi nama pengguna, mis. "Andi"); sistem = PARTICIPANT
-          (peserta lain TIDAK diberi nama; hanya "Speaker 1/2" bila diarization, atau "Unknown Participant")
+        • 2 track → label SUMBER, bukan identitas (v1.2): mic = LOCAL_MIC, sistem = SYSTEM_AUDIO.
+          LOCAL_MIC tidak otomatis "USER-only": dengan speaker laptop suara peserta lain bocor ke mic
+          (Step B: isolasi hanya 12,3 dB) → speaker_identity_status = UNRELIABLE_SOURCE_SEPARATION.
+          Nama (mis. "Andi") dan "Speaker 1/2" hanya bila pemisahan sumber sudah tervalidasi / dikonfirmasi pengguna
         • 1 track → diarization opsional (pyannote/WhisperX), label "Pembicara 1/2/3"
   ↓ 6. Pembersihan teks (bagian 10.4)
   ↓ 7. Simpan: teks mentah + teks bersih (keduanya, tidak saling menimpa)
@@ -1290,6 +1292,18 @@ Keputusan terbuka yang dicatat:
 | D-05 | Cakupan final MVP-A | Usulan di `PHASE0_REPORT.md` §19; menunggu approval |
 
 Bagian yang **sengaja tidak diubah** karena konsisten dengan arahan pemilik: pemisahan raw/clean transcript (§10.4, §13), AI hanya mengusulkan (§16), tanpa scope kirim email (§15.5), sumber wajib pada jawaban (§12.4), dan peta fase.
+
+---
+
+## Changelog v1.2 — 12 Okt 2026 (Gate B = PASS dengan catatan)
+
+| # | Keputusan | Dasar |
+|---|---|---|
+| 1 | Label sumber audio: **LOCAL_MIC** dan **SYSTEM_AUDIO**. Label `USER` dan `OTHER_PARTICIPANTS` / `PARTICIPANT` **tidak dipakai** sampai pemisahan sumber tervalidasi. Menggantikan butir 4 di Changelog v1.1 | Step B: bocor speaker→mic kuat (isolasi 12,3 dB) |
+| 2 | Bila output memakai speaker laptop: `speaker_identity_status = UNRELIABLE_SOURCE_SEPARATION`. Track mic tidak boleh dianggap USER-only | Step B |
+| 3 | Zoom capture **belum terbukti** (Step E). Browser capture terbukti hanya untuk audio proses lain lewat output default | Step B |
+| 4 | Jalur WASAPI/native dicatat terpisah; hasilnya tidak mengubah status Gate B (browser capture) | Keputusan pemilik |
+| 5 | Panjang path Windows (260 karakter) adalah kendala desain untuk perangkat lunak yang dipasang di laptop pengguna: lokasi kerja harus pendek | Perhitungan Step C: ±302 karakter pada lokasi ekstrak ZIP |
 
 ---
 

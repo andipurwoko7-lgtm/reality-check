@@ -1,6 +1,6 @@
 # STEP B REPORT — Audio Capture Smoke Test
 
-Status: **HASIL MASUK. Capture bersamaan terbukti; pemisahan mic/sistem BURUK pada speaker laptop. Cek WASAPI belum dilaporkan. Menunggu keputusan Gate B dari pemilik.**
+Status: **GATE B = PASS (12 Okt 2026), dengan catatan: pemisahan mic/sistem POOR pada speaker laptop; Zoom belum terbukti. Cek WASAPI boleh dilengkapi kemudian.**
 Baseline (Step A, PASS): Windows 11 Pro 25H2 · Core Ultra 7 165U · 31,5 GB RAM · Intel Graphics (tanpa NVIDIA) · output default Speakers Realtek · mic default Microphone Array Intel · **browser uji: Microsoft Edge 154** · OBS dan ffmpeg tidak terpasang.
 Asumsi: mic Zoom = mic bawaan; output = speaker laptop; Bluetooth dan headset berkabel tidak diuji; tanpa instalasi; audio simulasi saja.
 Data mentah: `results/step_b/step_b_results_interim_1.json` (B1, B2 pertama) dan `step_b_results_2.json` (B2 ulang, B3). Format tiap uji: STATUS · EVIDENCE · ERROR · INTERPRETATION · NEXT ACTION. Label: `VERIFIED` (terlihat di data/sandbox) · `DESK` (belum diuji) · `UNKNOWN`.
@@ -75,7 +75,22 @@ Mitigasi yang layak diuji (semua `DESK`, **belum diuji**): (1) headset: kebocora
 | Keduanya bersamaan | ✅ (B3, tanpa celah) |
 | Track terpisah (target ideal) | ✅ dua file terpisah; ⚠️ pemisahan **POOR** pada speaker laptop |
 
-**Saran status Gate B: PASS (capture).** Dengan catatan wajib: pemisahan mic/sistem tidak bersih dengan speaker laptop, dan belum teruji dengan Zoom nyata. Keputusan final ada pada pemilik. Step C tidak dimulai sebelum Gate B disetujui.
+**GATE B = PASS** (disetujui pemilik, 12 Okt 2026). Catatan resmi, tidak diperkuat:
+
+| Butir | Status |
+|---|---|
+| Microphone capture | PASS |
+| System audio capture | PASS |
+| Simultaneous capture | PASS |
+| Separate file/track capture | PASS |
+| Mic → system leakage | LOW / acceptable |
+| System → mic leakage | **HIGH / POOR separation pada speaker laptop** |
+| Zoom capture | **belum terbukti** |
+| Skenario speaker laptop | **tidak boleh dianggap track mic USER-only** |
+
+**Label sementara:** `LOCAL_MIC` dan `SYSTEM_AUDIO` (bukan `USER` / `OTHER_PARTICIPANTS`) sampai pemisahan sumber tervalidasi. Bila speaker laptop dipakai: `speaker_identity_status = UNRELIABLE_SOURCE_SEPARATION`.
+
+**WASAPI:** hasil boleh dilengkapi kemudian dan tidak menghalangi Gate B maupun Step C. Jika hasil native nanti gagal, status Gate B (browser capture) **tidak berubah**; dicatat sebagai hasil jalur native yang terpisah.
 
 ### Dampak pada rekomendasi arsitektur perekam (`PHASE0_REPORT.md` §9, belum diubah)
 - Browser capture terbukti **layak** di laptop ini (Edge 154), dengan pemilih layar manual. Itu menambah bukti untuk Opsi A, tetapi aturan pembalik di §9 (tiga sesi ≥30 menit dengan Zoom nyata) belum terpenuhi; rekomendasi sementara tidak berubah.
