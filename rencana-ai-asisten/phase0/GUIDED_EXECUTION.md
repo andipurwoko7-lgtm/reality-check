@@ -35,8 +35,8 @@ Arti status: **PASS** = kriteria langkah terpenuhi. **PARTIAL** = jalan sebagian
 | **B** | Audio Capture Smoke Test | MIC, SYSTEM AUDIO, MIC+SYSTEM bersamaan (audio non-Zoom) | Tidak | **PASS. Gate B disetujui 12 Okt 2026** (pemisahan POOR pada speaker laptop; Zoom belum terbukti) |
 | **C** | faster-whisper Environment Validation | venv Python 3.12 terisolasi, pasang dependensi, unduh model `small`, muat model, inferensi minimal | Ya (venv + model) | **PASS. Gate C disetujui 12 Okt 2026** (`PHASE0_TEST_PIN av<17`; percobaan 1 tanpa pin FAIL di C4; lihat `STEP_C_REPORT.md`) |
 | **D** | First Transcription | Satu rekaman simulasi berbahasa Indonesia, model `small`, satu konfigurasi, satu evaluasi terhadap ground truth | Tidak | **Gate D disetujui 12 Okt 2026**: pipeline PASS, kualitas PARTIAL (`STEP_D_REPORT.md`). Pemilik menyetujui urutan F sebelum E |
-| E | Full CASE 1–7 | Zoom Desktop, headset, speaker laptop, pemisahan track | Tidak | Ditunda sampai Gate F (belum disiapkan) |
-| **F** | Benchmark | Rekaman Step D yang sama: `small` → `medium` (→ besar hanya jika diminta); 3 varian (bahasa id / prompt glosarium / bahasa auto) | Ya (unduh model medium ±1,5 GB) | **DIJALANKAN** small+medium: PARTIAL; menunggu keputusan large-v3 / Gate F (`STEP_F_REPORT.md`) |
+| **E** | Zoom CASE 3–7 | Zoom Desktop + HP sebagai peserta, headset vs speaker laptop, `step_e.html` | Tidak | **SIAP DIJALANKAN** (`STEP_E_REPORT.md`) |
+| **F** | Benchmark | Rekaman Step D yang sama: `small` → `medium` (→ besar hanya jika diminta); 3 varian (bahasa id / prompt glosarium / bahasa auto) | Ya (unduh model medium ±1,5 GB) | **Gate F ditutup 12 Okt 2026: kualitas PARTIAL; large-v3 dilewati atas keputusan pemilik; `medium` = kandidat** (`STEP_F_REPORT.md`) |
 
 **Hanya Step A yang disiapkan sekarang.** Spesifikasi B–F di bawah adalah *ketentuan* yang sudah saya catat dari arahanmu, bukan alat yang sudah ada.
 

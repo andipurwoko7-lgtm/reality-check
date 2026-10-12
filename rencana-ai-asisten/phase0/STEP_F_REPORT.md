@@ -1,6 +1,6 @@
 # STEP F - Benchmark (satu rekaman, CPU/int8)
 
-Status: **DIJALANKAN (small + medium). Kualitas PARTIAL. Menunggu keputusan pemilik: large-v3 atau lewati; Gate F belum dibuka.**
+Status: **DIJALANKAN (small + medium). Kualitas PARTIAL. Gate F ditutup (large-v3 dilewati).**
 
 ## Tujuan dan batas
 - Menjawab: apakah ambang Phase 0 (WER ternormalisasi <= 20%, istilah >= 90%, angka >= 95%) bisa tercapai, dan dengan apa (model lebih besar, prompt glosarium, atau bahasa auto)?
@@ -51,4 +51,4 @@ Ambang Phase 0: WER ternormalisasi <= 20%, istilah >= 90%, angka >= 95%. Unduh m
 - `download` di sandbox: BLOCKED (egress ke huggingface.co ditolak) - jalur unduh nyata, `step_f_run.ps1`, dan pengukuran RAM Windows **belum teruji**.
 
 ## Gate F
-PENDING keputusan pemilik. Jangan menarik kesimpulan dari satu rekaman satu pembicara: hasil adalah indikasi, bukan bukti untuk rapat nyata multi-pembicara.
+**Ditutup oleh pemilik (12 Okt 2026, "lewati"): large-v3 tidak dijalankan; `medium` dicatat sebagai model kandidat; kualitas PARTIAL (istilah 80% < 90%).** Kandidat bukan keputusan final: ambang istilah belum tercapai dan keputusan Phase 4 tetap di tangan pemilik. Jangan menarik kesimpulan dari satu rekaman satu pembicara: hasil adalah indikasi, bukan bukti untuk rapat nyata multi-pembicara.
