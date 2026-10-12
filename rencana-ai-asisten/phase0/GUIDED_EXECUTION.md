@@ -32,7 +32,7 @@ Arti status: **PASS** = kriteria langkah terpenuhi. **PARTIAL** = jalan sebagian
 | Step | Nama | Isi | Instalasi? | Gate |
 |---|---|---|---|---|
 | **A** | System Inventory | Baca info perangkat (skrip PowerShell, hanya-baca) | Tidak | **PASS. Gate A disetujui 9 Okt 2026** |
-| **B** | Audio Capture Smoke Test | Bukti: MIC terekam, SYSTEM AUDIO terekam, MIC+SYSTEM bersamaan (audio non-Zoom). Halaman uji browser `step_b.html`; WASAPI hanya cek dependensi | Tidak | **SIAP DIJALANKAN** (lihat bagian Step B) |
+| **B** | Audio Capture Smoke Test | Bukti: MIC, SYSTEM AUDIO, MIC+SYSTEM bersamaan (audio non-Zoom) | Tidak | **HASIL MASUK: B1 PASS, B2 PASS, B3 PASS (pemisahan POOR); menunggu keputusan Gate B** (lihat `STEP_B_REPORT.md`) |
 | C | faster-whisper Environment | Python venv, pasang paket, uji unduh model langsung dari laptop | Ya (venv) | Belum disiapkan |
 | D | First Transcription | Satu file simulasi, model `small`, satu evaluasi | Tidak | Belum disiapkan |
 | E | Full CASE 1–7 | Zoom Desktop, headset, speaker laptop, pemisahan track | Tidak | Belum disiapkan |

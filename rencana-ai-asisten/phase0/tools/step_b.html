@@ -39,7 +39,7 @@
   <div class="row" style="margin-top:6px"><span style="width:60px">Sistem</span><div class="bar" style="flex:1"><i id="mSys"></i></div><span id="tSys" class="mut" style="width:80px">—</span></div>
 </div>
 
-<div class="card"><h2>B1 — Mikrofon (±25 detik)</h2>
+<div class="card"><h2>B1 — Mikrofon (±28 detik: 3 detik diam, lalu baca)</h2>
   <p class="mut" style="margin:0 0 8px">Mic default Windows akan dipakai. Saat hitungan berjalan, baca dengan suara biasa kalimat yang tampil di layar.</p>
   <div class="row"><button class="primary" id="btnB1">▶ Mulai B1</button><span id="stB1"></span>
     <label>Terdengar jelas? <select id="heardB1"><option value="">(belum dinilai)</option><option value="ya">Ya</option><option value="sebagian">Sebagian</option><option value="tidak">Tidak</option></select></label></div>
@@ -72,10 +72,10 @@
 const $ = id => document.getElementById(id);
 const FAST = /[?&]fast/.test(location.search);           // hanya untuk tes otomatis
 const S = x => FAST ? Math.max(2.5, x * 0.4) : x;
-const CFG = { toneHz: 1000, margin: FAST ? 0.4 : 0.7, b1: S(25),
+const CFG = { toneHz: 1000, margin: FAST ? 0.4 : 0.7, b1floor: S(3), b1: S(25),
   b2: { floor: S(4), tone: S(6), ext: S(12) }, b3: { floor: S(5), tone: S(8), voice: S(10), both: S(8) } };
 const SENT = "Ini adalah pengujian microphone untuk AI Assistant. Nilai outstanding sebesar empat ratus sembilan puluh lima miliar rupiah. Deadline pekerjaan adalah tanggal dua belas Oktober.";
-const R = { page: "step_b v1", B1: null, B2: null, B3: null, wasapi: { status: "NOT_RUN", note: "diuji lewat PowerShell, lihat instruksi" } };
+const R = { page: "step_b v1.1", B1: null, B2: null, B3: null, wasapi: { status: "NOT_RUN", note: "diuji lewat PowerShell, lihat instruksi" } };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const db = x => x > 1e-6 ? 20 * Math.log10(x) : -120;
 const r1 = x => Math.round(x * 10) / 10;
@@ -151,7 +151,13 @@ const seg = (d, a, b) => d.x.subarray(Math.max(0, Math.floor(a * d.sr)), Math.mi
 function rmsDb(x) { let s = 0; for (let i = 0; i < x.length; i++) s += x[i] * x[i]; return db(Math.sqrt(s / Math.max(1, x.length))); }
 function peakDb(x) { let p = 0; for (let i = 0; i < x.length; i++) { const a = Math.abs(x[i]); if (a > p) p = a; } return db(p); }
 function clipPct(x) { let c = 0; for (let i = 0; i < x.length; i++) if (Math.abs(x[i]) >= 0.999) c++; return 100 * c / Math.max(1, x.length); }
-function activeFrac(x, sr, thr = -45) { const w = Math.floor(sr * 0.05); let a = 0, n = 0; for (let i = 0; i + w <= x.length; i += w) { n++; if (rmsDb(x.subarray(i, i + w)) > thr) a++; } return n ? a / n : 0; }
+// "Aktif" = jendela 50 ms yang RMS-nya di atas ambang yang diberikan pemanggil. Ambang = noise floor TERUKUR (segmen hening terpisah) + 10 dB, minimal -60 dBFS.
+// (v1 memakai ambang tetap -45 dBFS; di laptop ini noise floor mic -44 dBFS sehingga derau terhitung sebagai suara.)
+function activeFrac(x, sr, thr) {
+  const w = Math.floor(sr * 0.05); let a = 0, n = 0;
+  for (let i = 0; i + w <= x.length; i += w) { n++; if (rmsDb(x.subarray(i, i + w)) > thr) a++; }
+  return n ? a / n : 0;
+}
 function goertzelDb(x, sr, hz) {
   const N = x.length; if (N < 64) return -120; const k = 2 * Math.PI * hz / sr, c = 2 * Math.cos(k); let s1 = 0, s2 = 0;
   for (let i = 0; i < N; i++) { const w = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1)); const s = x[i] * w + c * s1 - s2; s2 = s1; s1 = s; }
@@ -186,12 +192,14 @@ async function runB1() {
     await ensureCtx(); const m = await acquireMic();
     if (m.error) { R.B1 = { status: m.status || "FAIL", error: m.error }; log("B1: " + m.error, "bad"); return; }
     const stop = meter(m.stream, "mMic", "tMic"), rec = newRec(m.track); rec.rec.start(1000);
-    await runPhases([{ name: "b1", title: "B1 — BACA dengan suara biasa:", text: SENT, sec: CFG.b1 }]);
+    const marks = await runPhases([{ name: "b1floor", title: "B1 — DIAM 3 detik (mengukur noise ruangan).", sec: CFG.b1floor },
+      { name: "b1", title: "B1 — BACA dengan suara biasa:", text: SENT, sec: CFG.b1 }]);
     await finish(rec); stop(); m.stream.getTracks().forEach(t => t.stop());
-    const d = await decode(rec.blob), x = d.x;
-    const met = { bytes: rec.blob.size, mime: rec.mime, durationSec: r1(d.dur), requestedSec: r1(CFG.b1), decodedSampleRate: d.sr, decodedChannels: d.ch,
+    const d = await decode(rec.blob), x = seg(d, ...win(marks, "b1")), xf = seg(d, ...win(marks, "b1floor"));
+    const floorDb = rmsDb(xf), thr = Math.max(floorDb + 10, -60);
+    const met = { bytes: rec.blob.size, mime: rec.mime, durationSec: r1(d.dur), requestedSec: r1(CFG.b1floor + CFG.b1), decodedSampleRate: d.sr, decodedChannels: d.ch,
       trackSettings: m.settings, micLabel: m.label, peakDbfs: r1(peakDb(x)), rmsDbfs: r1(rmsDb(x)), clippingPct: Math.round(clipPct(x) * 1000) / 1000,
-      activeFraction: Math.round(activeFrac(x, d.sr) * 100) / 100, maxChunkGapMs: rec.maxGapMs };
+      activeFraction: Math.round(activeFrac(x, d.sr, thr) * 100) / 100, noiseFloorDbfs: r1(floorDb), activeThresholdDbfs: r1(thr), maxChunkGapMs: rec.maxGapMs };
     let st = "PASS";
     if (!met.bytes || met.peakDbfs < -50 || Math.abs(met.durationSec - met.requestedSec) > 6) st = "FAIL";
     else if (met.peakDbfs < -30 || met.clippingPct > 1 || met.activeFraction < 0.25 || Math.abs(met.durationSec - met.requestedSec) > 3) st = "PARTIAL";
@@ -249,10 +257,11 @@ async function runB3() {
     await Promise.all([finish(rs), finish(rm)]); stopM(); stopS(); [m.stream, s.stream].forEach(st => st.getTracks().forEach(t => t.stop()));
     const dm = await decode(rm.blob), ds = await decode(rs.blob), M = n => seg(dm, ...win(marks, n)), Sy = n => seg(ds, ...win(marks, n));
     const f = CFG.toneHz, total = CFG.b3.floor + CFG.b3.tone + CFG.b3.voice + CFG.b3.both;
+    const thrM = Math.max(rmsDb(M("floor")) + 10, -60);
     const mic = { bytes: rm.blob.size, durationSec: r1(dm.dur), decodedSampleRate: dm.sr, micLabel: m.label, trackSettings: m.settings, maxChunkGapMs: rm.maxGapMs,
       tone1kHz_floor_dB: r1(goertzelDb(M("floor"), dm.sr, f)), tone1kHz_tonePhase_dB: r1(goertzelDb(M("tone"), dm.sr, f)),
-      rms_floor_dB: r1(rmsDb(M("floor"))), rms_voice_dB: r1(rmsDb(M("voice"))), activeFraction_voice: Math.round(activeFrac(M("voice"), dm.sr) * 100) / 100,
-      activeFraction_both: Math.round(activeFrac(M("both"), dm.sr) * 100) / 100, peakDbfs: r1(peakDb(dm.x)), clippingPct: Math.round(clipPct(dm.x) * 1000) / 1000 };
+      rms_floor_dB: r1(rmsDb(M("floor"))), rms_voice_dB: r1(rmsDb(M("voice"))), activeFraction_voice: Math.round(activeFrac(M("voice"), dm.sr, thrM) * 100) / 100,
+      activeFraction_both: Math.round(activeFrac(M("both"), dm.sr, thrM) * 100) / 100, activeThresholdDbfs: r1(thrM), peakDbfs: r1(peakDb(dm.x)), clippingPct: Math.round(clipPct(dm.x) * 1000) / 1000 };
     const sys = { bytes: rs.blob.size, durationSec: r1(ds.dur), decodedSampleRate: ds.sr, displaySurface: s.surface, trackSettings: s.settings, maxChunkGapMs: rs.maxGapMs,
       tone1kHz_floor_dB: r1(goertzelDb(Sy("floor"), ds.sr, f)), tone1kHz_tonePhase_dB: r1(goertzelDb(Sy("tone"), ds.sr, f)), tone1kHz_bothPhase_dB: r1(goertzelDb(Sy("both"), ds.sr, f)),
       rms_floor_dB: r1(rmsDb(Sy("floor"))), rms_voicePhase_dB: r1(rmsDb(Sy("voice"))) };
